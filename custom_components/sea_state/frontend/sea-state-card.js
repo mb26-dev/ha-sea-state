@@ -3,7 +3,7 @@
  * https://github.com/mb26-dev/ha-sea-state
  */
 
-import { DEG, ecef, viewFrame, sunDirection, loadEarth, renderEarth, upsampleGrid, waveColor, WAVE_STOPS } from "./sea-state-earth.js?v=0.1.0b5";
+import { DEG, ecef, viewFrame, sunDirection, loadEarth, renderEarth, upsampleGrid, waveColor, WAVE_STOPS } from "./sea-state-earth.js?v=0.1.0b6";
 import {
   CONDITION_COLORS,
   CONDITION_LABELS,
@@ -13,9 +13,9 @@ import {
   cloudSprite,
   drawLightning,
   drawCyclone,
-} from "./sea-state-art.js?v=0.1.0b5";
+} from "./sea-state-art.js?v=0.1.0b6";
 
-const VERSION = "0.1.0b5";
+const VERSION = "0.1.0b6";
 
 // animated SVG markers, shown as <img> above the globe so their own animations run
 const ICON_BASE = new URL("./icons/", import.meta.url);
@@ -517,7 +517,8 @@ class SeaStateCard extends HTMLElement {
         <div class="stage">
           <canvas class="stars"></canvas>
           <canvas class="earth"></canvas>
-          <canvas class="fx"></canvas>
+          <!-- id "slider": hass-swipe-navigation leaves gestures on #slider alone, so dragging the globe does not switch views -->
+          <canvas class="fx" id="slider"></canvas>
           <div class="markers"></div>
           <div class="msg">Loading the oceans...</div>
           <div class="top">
