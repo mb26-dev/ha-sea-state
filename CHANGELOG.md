@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.0b10 (beta)
+
+- "All" mode shows the surf spots clearly on the whole globe: bigger dots, surfer figures for the best spots from a lower zoom, and names of firing spots without zooming in
+- Clouds are a little lighter in "All" mode so they no longer hide the spots
+
 ## 0.1.0b9 (beta)
 
 - New card `custom:sea-state-lightning-card`: live lightning strikes around home on a zoomable NASA map (Blue Marble relief or today's satellite image) with range rings, a radar sweep, flashing fresh strikes, the animated lightning marker on the newest one, the storm trend and tiles for your places
