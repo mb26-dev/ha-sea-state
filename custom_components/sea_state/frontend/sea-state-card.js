@@ -137,6 +137,21 @@ function svg(path) {
 
 const CAM_COURTESY = `<div class="by muted">Webcams provided by <a href="https://www.windy.com/" target="_blank" rel="noopener">windy.com</a> &mdash; <a href="https://www.windy.com/webcams/add" target="_blank" rel="noopener">add a webcam</a></div>`;
 
+/** sun elevation in degrees at a place and time (simple solar position, good to about 1 degree) */
+function sunElevation(lat, lon, ms) {
+  const rad = Math.PI / 180;
+  const d = ms / 86400000 + 2440587.5 - 2451545.0;
+  const g = (357.529 + 0.98560028 * d) * rad;
+  const q = 280.459 + 0.98564736 * d;
+  const L = (q + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g)) * rad;
+  const e = (23.439 - 0.00000036 * d) * rad;
+  const ra = Math.atan2(Math.cos(e) * Math.sin(L), Math.cos(L));
+  const dec = Math.asin(Math.sin(e) * Math.sin(L));
+  const gmst = (18.697374558 + 24.06570982441908 * d) % 24;
+  const ha = (gmst * 15 + lon) * rad - ra;
+  return Math.asin(Math.sin(lat * rad) * Math.sin(dec) + Math.cos(lat * rad) * Math.cos(dec) * Math.cos(ha)) / rad;
+}
+
 /** "12 min ago" style age of an image */
 function ageText(ms) {
   if (!Number.isFinite(ms)) return "";
@@ -1703,10 +1718,15 @@ class SeaStateCard extends HTMLElement {
     if (!hit) return `<div class="ct">Webcams nearby</div><div class="muted">loading...</div>`;
     if (hit.error) return hit.error === "disabled" ? "" : `<div class="ct">Webcams nearby</div><div class="muted">Webcams not available right now.</div>`;
     if (!hit.list.length) return `<div class="ct">Webcams nearby</div><div class="muted">No webcam within 15 km.</div>${CAM_COURTESY}`;
+    const spot = this._spots.find((x) => x.id === id);
+    // at night the live image is black: show the last daylight image of the cam instead
+    const night = spot ? sunElevation(spot.lat, spot.lon, Date.now()) < -4 : false;
     const cards = hit.list.map((c) => {
-      const age = c.updated ? ageText(Date.parse(c.updated)) : "";
-      const meta = [c.distance_km != null ? this._dist(c.distance_km) : "", age].filter(Boolean).join(" · ");
-      return `<a class="cam" href="${esc(c.link)}" target="_blank" rel="noopener" title="${esc(c.title)}"><img src="${esc(c.image)}" alt="${esc(c.title)}" loading="lazy"><div class="cn">${esc(c.title)}<div class="muted">${esc(meta)}</div></div></a>`;
+      const useDay = night && c.daylight;
+      const age = useDay ? "last daylight" : c.updated ? ageText(Date.parse(c.updated)) : "";
+      const dist = c.distance_km == null ? "" : c.distance_km < 1 ? `< ${this._dist(1)}` : this._dist(c.distance_km);
+      const meta = [dist, age].filter(Boolean).join(" · ");
+      return `<a class="cam" href="${esc(c.link)}" target="_blank" rel="noopener" title="${esc(c.title)}"><img src="${esc(useDay ? c.daylight : c.image)}" alt="${esc(c.title)}" loading="lazy"><div class="cn">${esc(c.title)}<div class="muted">${esc(meta)}</div></div></a>`;
     });
     return `<div class="ct">Webcams nearby</div><div class="cl">${cards.join("")}</div>${CAM_COURTESY}`;
   }
