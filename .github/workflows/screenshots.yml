@@ -2,6 +2,7 @@ name: Render screenshots
 
 on:
   push:
+    branches: [main]
     paths:
       - "docs/demo/**"
       - "custom_components/sea_state/frontend/sea-state-lightning.js"
