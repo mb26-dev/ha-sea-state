@@ -34,6 +34,10 @@ No API key, no account.
 | **Ocean & weather: Southern Ocean gales** | |
 | <img src="docs/images/ocean-weather.jpg" alt="Ocean and weather mode over the South Pacific: wave heights up to 6 m, clouds and two gale areas with wind and pressure"> | Wave heights as colours, crests rolling with the swell, clouds drifting with the wind and gale areas with wind speed and pressure. Antarctica in the south, South America on the night side with its city lights. |
 
+**Webcams at the spot:** check the weather and the crowd before you go (optional, with a free Windy key)
+
+<img src="docs/images/webcams.jpg" alt="Kata Beach details with two live webcams of Kata Yai Beach and Karon Beach next to the globe over the Indian Ocean">
+
 ## Features
 
 **Lovelace card** `custom:sea-state-card` (installed and registered automatically)
@@ -45,6 +49,7 @@ No API key, no account.
 - **Tropical cyclones** (hurricanes, typhoons, cyclones) from GDACS as rotating spirals with their past and forecast track, coloured by category
 - **Gale areas at sea** (Beaufort 8 and more) with wind and pressure
 - **Surf spots** with a little surfer: sitting on a flat sea, paddling, riding, in the barrel when it is epic, a red flag when it is too big, spray when it is blown out
+- **Webcams (optional):** up to three live webcams near a spot, beach cams first, with the last daylight image at night (free Windy key)
 - **Shark areas:** spots where sharks are part of the local ecosystem get a small shark marker, and their details name the species, the local safety measures and the official live service for the area
 - **Three modes:** Ocean & weather, Surf, or All, plus a **Firing** filter for the spots that work right now
 - **Region buttons:** surf regions (Hawaii, Indonesia, Europe ...) in surf mode, ocean basins (North Atlantic, West Pacific, Andaman Sea ...) in ocean mode, each with its number of firing spots or storms
