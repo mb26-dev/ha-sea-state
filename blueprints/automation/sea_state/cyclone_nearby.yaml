@@ -1,0 +1,46 @@
+blueprint:
+  name: Sea State - tropical cyclone nearby
+  description: >
+    Do something when a tropical cyclone, or its forecast track, comes within the
+    warning radius of your home (Sea State Forecast, data from GDACS). The actions
+    get the variables name, kind, category, wind_kmh, alert, distance_km,
+    closest_approach_km, closest_approach_time and url.
+  domain: automation
+  source_url: https://github.com/mb26-dev/ha-sea-state/blob/main/blueprints/automation/sea_state/cyclone_nearby.yaml
+  input:
+    cyclone_sensor:
+      name: Cyclone sensor
+      description: The "Tropical cyclone nearby" binary sensor of Sea State Forecast.
+      selector:
+        entity:
+          filter:
+            - integration: sea_state
+              domain: binary_sensor
+    actions:
+      name: Actions
+      description: What should happen, for example a notification.
+      selector:
+        action: {}
+
+mode: single
+max_exceeded: silent
+
+triggers:
+  - trigger: state
+    entity_id: !input cyclone_sensor
+    from: "off"
+    to: "on"
+
+variables:
+  cyclone_sensor: !input cyclone_sensor
+  name: "{{ state_attr(cyclone_sensor, 'name') }}"
+  kind: "{{ state_attr(cyclone_sensor, 'kind') }}"
+  category: "{{ state_attr(cyclone_sensor, 'category') }}"
+  wind_kmh: "{{ state_attr(cyclone_sensor, 'wind_kmh') }}"
+  alert: "{{ state_attr(cyclone_sensor, 'alert') }}"
+  distance_km: "{{ state_attr(cyclone_sensor, 'distance_km') }}"
+  closest_approach_km: "{{ state_attr(cyclone_sensor, 'closest_approach_km') }}"
+  closest_approach_time: "{{ state_attr(cyclone_sensor, 'closest_approach_time') }}"
+  url: "{{ state_attr(cyclone_sensor, 'url') }}"
+
+actions: !input actions

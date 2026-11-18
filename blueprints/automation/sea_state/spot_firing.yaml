@@ -1,0 +1,57 @@
+blueprint:
+  name: Sea State - surf spot is firing
+  description: >
+    Do something when your home spot rates at or above the firing threshold of
+    Sea State Forecast. The actions get the variables spot, rating, condition,
+    surf_m, swell_m, swell_period_s, wind_kmh, wind and best_today.
+  domain: automation
+  source_url: https://github.com/mb26-dev/ha-sea-state/blob/main/blueprints/automation/sea_state/spot_firing.yaml
+  input:
+    firing_sensor:
+      name: Firing sensor
+      description: The "Home spot firing" binary sensor of Sea State Forecast.
+      selector:
+        entity:
+          filter:
+            - integration: sea_state
+              domain: binary_sensor
+    only_daylight:
+      name: Only in daylight
+      description: Ignore sessions that start between sunset and sunrise.
+      default: true
+      selector:
+        boolean: {}
+    actions:
+      name: Actions
+      description: What should happen, for example a notification.
+      selector:
+        action: {}
+
+mode: single
+max_exceeded: silent
+
+triggers:
+  - trigger: state
+    entity_id: !input firing_sensor
+    from: "off"
+    to: "on"
+
+conditions:
+  - condition: template
+    value_template: >
+      {{ not only_daylight or is_state('sun.sun', 'above_horizon') }}
+
+variables:
+  only_daylight: !input only_daylight
+  firing_sensor: !input firing_sensor
+  spot: "{{ state_attr(firing_sensor, 'spot') }}"
+  rating: "{{ state_attr(firing_sensor, 'rating') }}"
+  condition: "{{ state_attr(firing_sensor, 'condition') }}"
+  surf_m: "{{ state_attr(firing_sensor, 'surf_m') }}"
+  swell_m: "{{ state_attr(firing_sensor, 'swell_m') }}"
+  swell_period_s: "{{ state_attr(firing_sensor, 'swell_period_s') }}"
+  wind_kmh: "{{ state_attr(firing_sensor, 'wind_kmh') }}"
+  wind: "{{ state_attr(firing_sensor, 'wind') }}"
+  best_today: "{{ state_attr(firing_sensor, 'best_today') }}"
+
+actions: !input actions
