@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0b5 (beta)
+
+- Daylight everywhere: the whole visible half of the globe is now lit by default, so waves, storms and spots are always easy to see; the real day and night with city lights is still available with `lighting: real`
+- New card option `lighting` (`day` or `real`) in YAML and in the visual editor
+- Fixed: the +N count of a spot group showed at the edge of the card when its surfer was just outside
+
 ## 0.1.0b4 (beta)
 
 - Shark areas: 33 spots in Hawaii, California, the US East Coast, Australia, South Africa and Réunion show a small shark marker next to the surfer

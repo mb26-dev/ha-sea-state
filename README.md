@@ -38,7 +38,7 @@ No API key, no account.
 
 **Lovelace card** `custom:sea-state-card` (installed and registered automatically)
 
-- Globe with real NASA imagery: Blue Marble by day, city lights by night, live day and night terminator and sun glint on the water
+- Globe with real NASA imagery: daylight everywhere by default, or the real day and night with city lights at night, live terminator and sun glint on the water
 - **Significant wave height** of all oceans as colours, from calm deep blue to phenomenal magenta
 - **Rolling wave crests** that travel in the real wave direction; long period swell moves faster, high seas get white caps
 - **Clouds, rain and lightning** from the global weather model, drifting with the wind
@@ -132,6 +132,7 @@ center: home           # home, world, a surf region, an ocean basin (see below) 
 zoom: 1.6              # 1 shows the whole globe
 units: auto            # auto (like Home Assistant), metric or imperial
 quality: auto          # auto, high or low (old wall tablets)
+lighting: day          # day (daylight everywhere) or real (real day and night with city lights)
 waves: true            # wave height colours
 crests: true           # rolling wave crests
 clouds: true
