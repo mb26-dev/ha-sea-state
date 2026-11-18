@@ -24,6 +24,7 @@ surf = load("surf")
 grid = load("grid")
 cyclones = load("cyclones")
 spots = load("spots")
+sharks = load("sharks")
 
 NOW = datetime(2026, 11, 18, 6, 30, tzinfo=timezone.utc)
 
@@ -308,6 +309,20 @@ def test_period_fallback():
     marine = {"hourly": {"time": [0], "swell_wave_peak_period": [None], "swell_wave_period": [9.5], "wave_period": [7.0]}}
     row = surf.build_rows(marine, None)[0]
     assert row["sw_per"] == 9.5 and row["per"] == 7.0
+
+
+def test_sharks():
+    ids = {s["id"] for s in spots.builtin_spots()}
+    # every shark area entry points to a real spot, an area and (if any) a service with an https link
+    for spot_id, area in sharks.SPOT_AREAS.items():
+        assert spot_id in ids, spot_id
+        assert area in sharks._AREAS, area
+        info = sharks.shark_info(spot_id)
+        assert info["species"]
+        if info["service"]:
+            assert info["service"]["url"].startswith("https://")
+    assert sharks.shark_info("muizenberg")["service"]["name"] == "Shark Spotters"
+    assert sharks.shark_info("uluwatu") is None
 
 
 if __name__ == "__main__":
