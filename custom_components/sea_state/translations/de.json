@@ -1,0 +1,154 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Sea State Forecast",
+        "description": "Live-Wellen, Stürme und Surf für den ganzen Planeten. Wähle die Datenquellen, deinen Home-Spot und die Spots, für die du Sensoren möchtest. Alles lässt sich später ändern.",
+        "data": {
+          "sources": "Datenquellen",
+          "home_spot": "Home-Spot",
+          "watched_spots": "Spots mit eigenem Sensor",
+          "firing_rating": "Läuft ab Bewertung",
+          "cyclone_radius_km": "Zyklon-Warnradius",
+          "grid_hours": "Aktualisierung globale Wellen und Wetter",
+          "custom_spots": "Eigene Spots"
+        },
+        "data_description": {
+          "sources": "Globale Wellen und Wetter zeichnen Meer und Stürme auf den Globus. Surf-Spots bewerten 112 bekannte Spots alle 6 Stunden. Tropische Wirbelstürme kommen von GDACS.",
+          "home_spot": "Bekommt eigene Sensoren (Bewertung, Zustand, Surfhöhe, Swell-Periode, Wind, Wassertemperatur, Seegang, Tide). 'Nächster Spot zu Hause' wählt ihn anhand deines Home-Standorts.",
+          "watched_spots": "Jeder bekommt einen Bewertungs-Sensor mit der kompletten Vorhersage als Attribute.",
+          "firing_rating": "Bewertung (0 bis 5 Sterne), ab der ein Spot als 'läuft' zählt.",
+          "cyclone_radius_km": "Der Sensor 'Tropischer Wirbelsturm in der Nähe' schaltet ein, wenn ein Zyklon oder seine Zugbahn so nah an dein Zuhause kommt.",
+          "grid_hours": "Das globale Raster braucht pro Aktualisierung rund 2.300 Open-Meteo-Abrufe (frei sind 10.000 pro Tag). Die Vorhersage reicht 48 Stunden, alle 12 Stunden genügt.",
+          "custom_spots": "Ein Spot pro Zeile: Name, Breitengrad, Längengrad, Swell-Richtung (aus, Grad), optional ablandige Windrichtung (aus) und optional min, ideal, max Surfhöhe in m. Beispiel: Mein Riff, 7.81, 98.29, 250, 90, 0.5, 1.2, 2.5"
+        }
+      }
+    },
+    "error": {
+      "no_sources": "Wähle mindestens eine Datenquelle.",
+      "bad_custom_spots": "Eine Zeile bei den eigenen Spots ist ungültig. Format: Name, Breite, Länge, Swell-Richtung."
+    },
+    "abort": {
+      "already_configured": "Sea State Forecast ist bereits eingerichtet.",
+      "single_instance_allowed": "Sea State Forecast ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Sea State Forecast",
+        "data": {
+          "sources": "Datenquellen",
+          "home_spot": "Home-Spot",
+          "watched_spots": "Spots mit eigenem Sensor",
+          "firing_rating": "Läuft ab Bewertung",
+          "cyclone_radius_km": "Zyklon-Warnradius",
+          "grid_hours": "Aktualisierung globale Wellen und Wetter",
+          "custom_spots": "Eigene Spots"
+        },
+        "data_description": {
+          "sources": "Globale Wellen und Wetter zeichnen Meer und Stürme auf den Globus. Surf-Spots bewerten 112 bekannte Spots alle 6 Stunden. Tropische Wirbelstürme kommen von GDACS.",
+          "home_spot": "Bekommt eigene Sensoren (Bewertung, Zustand, Surfhöhe, Swell-Periode, Wind, Wassertemperatur, Seegang, Tide). 'Nächster Spot zu Hause' wählt ihn anhand deines Home-Standorts.",
+          "watched_spots": "Jeder bekommt einen Bewertungs-Sensor mit der kompletten Vorhersage als Attribute.",
+          "firing_rating": "Bewertung (0 bis 5 Sterne), ab der ein Spot als 'läuft' zählt.",
+          "cyclone_radius_km": "Der Sensor 'Tropischer Wirbelsturm in der Nähe' schaltet ein, wenn ein Zyklon oder seine Zugbahn so nah an dein Zuhause kommt.",
+          "grid_hours": "Das globale Raster braucht pro Aktualisierung rund 2.300 Open-Meteo-Abrufe (frei sind 10.000 pro Tag). Die Vorhersage reicht 48 Stunden, alle 12 Stunden genügt.",
+          "custom_spots": "Ein Spot pro Zeile: Name, Breitengrad, Längengrad, Swell-Richtung (aus, Grad), optional ablandige Windrichtung (aus) und optional min, ideal, max Surfhöhe in m. Beispiel: Mein Riff, 7.81, 98.29, 250, 90, 0.5, 1.2, 2.5"
+        }
+      }
+    },
+    "error": {
+      "no_sources": "Wähle mindestens eine Datenquelle.",
+      "bad_custom_spots": "Eine Zeile bei den eigenen Spots ist ungültig. Format: Name, Breite, Länge, Swell-Richtung."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "home_rating": {
+        "name": "Home-Spot Bewertung"
+      },
+      "home_condition": {
+        "name": "Home-Spot Zustand",
+        "state": {
+          "flat": "Flach",
+          "poor": "Schwach",
+          "fair": "Ordentlich",
+          "good": "Gut",
+          "epic": "Episch",
+          "blown_out": "Verblasen",
+          "too_big": "Zu groß"
+        }
+      },
+      "home_surf": {
+        "name": "Home-Spot Surfhöhe"
+      },
+      "home_swell_period": {
+        "name": "Home-Spot Swell-Periode"
+      },
+      "home_wind": {
+        "name": "Home-Spot Wind"
+      },
+      "home_water_temperature": {
+        "name": "Home-Spot Wassertemperatur"
+      },
+      "home_sea_state": {
+        "name": "Home-Spot Seegang",
+        "state": {
+          "calm_glassy": "Glatt (spiegelglatt)",
+          "calm_rippled": "Glatt (gekräuselt)",
+          "smooth": "Ruhig",
+          "slight": "Leicht bewegt",
+          "moderate": "Mäßig bewegt",
+          "rough": "Grob",
+          "very_rough": "Sehr grob",
+          "high": "Hoch",
+          "very_high": "Sehr hoch",
+          "phenomenal": "Außergewöhnlich schwer"
+        }
+      },
+      "home_next_tide": {
+        "name": "Home-Spot nächste Tide"
+      },
+      "spots_firing": {
+        "name": "Laufende Spots"
+      },
+      "best_spot": {
+        "name": "Bester Spot gerade"
+      },
+      "cyclones": {
+        "name": "Tropische Wirbelstürme"
+      },
+      "nearest_cyclone": {
+        "name": "Nächster tropischer Wirbelsturm"
+      },
+      "gale_areas": {
+        "name": "Sturmgebiete auf See"
+      },
+      "status": {
+        "name": "Datenquellen",
+        "state": {
+          "ok": "OK",
+          "degraded": "Eingeschränkt",
+          "waiting": "Wartet"
+        }
+      },
+      "spot_rating": {
+        "name": "{spot} Bewertung"
+      }
+    },
+    "binary_sensor": {
+      "home_firing": {
+        "name": "Home-Spot läuft"
+      },
+      "cyclone_nearby": {
+        "name": "Tropischer Wirbelsturm in der Nähe"
+      }
+    }
+  },
+  "issues": {
+    "source_down": {
+      "title": "{source} ist nicht erreichbar",
+      "description": "Sea State Forecast konnte seit mehr als {hours} Stunden keine Daten von {source} laden. Die letzten bekannten Daten werden weiter angezeigt. Ist die Quelle nur vorübergehend gestört, musst du nichts tun; der Hinweis verschwindet von selbst, sobald sie wieder antwortet."
+    }
+  }
+}

@@ -1,0 +1,154 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Sea State Forecast",
+        "description": "Live waves, storms and surf for the whole planet. Choose the data sources, your home spot and the spots you want sensors for. Everything can be changed later.",
+        "data": {
+          "sources": "Data sources",
+          "home_spot": "Home spot",
+          "watched_spots": "Spots with their own sensor",
+          "firing_rating": "Firing from rating",
+          "cyclone_radius_km": "Cyclone warning radius",
+          "grid_hours": "Global waves and weather update",
+          "custom_spots": "Custom spots"
+        },
+        "data_description": {
+          "sources": "Global waves and weather draw the sea and the storms on the globe. Surf spots rate 112 famous breaks every 6 hours. Tropical cyclones come from GDACS.",
+          "home_spot": "Gets its own sensors (rating, condition, surf height, swell period, wind, water temperature, sea state, tide). 'Nearest spot to home' picks it from your home location.",
+          "watched_spots": "Each one gets a rating sensor with the full forecast as attributes.",
+          "firing_rating": "Rating (0 to 5 stars) from which a spot counts as firing.",
+          "cyclone_radius_km": "The 'Tropical cyclone nearby' sensor turns on when a cyclone or its forecast track comes this close to home.",
+          "grid_hours": "The global grid needs about 2,300 Open-Meteo calls per update (free limit 10,000 per day). The forecast covers 48 hours, so every 12 hours is plenty.",
+          "custom_spots": "One spot per line: name, latitude, longitude, swell direction (from, degrees), optional offshore wind direction (from) and optional min, ideal, max surf height in m. Example: My Reef, 7.81, 98.29, 250, 90, 0.5, 1.2, 2.5"
+        }
+      }
+    },
+    "error": {
+      "no_sources": "Select at least one data source.",
+      "bad_custom_spots": "A custom spot line could not be read. Use: name, lat, lon, swell direction."
+    },
+    "abort": {
+      "already_configured": "Sea State Forecast is already set up.",
+      "single_instance_allowed": "Sea State Forecast is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Sea State Forecast",
+        "data": {
+          "sources": "Data sources",
+          "home_spot": "Home spot",
+          "watched_spots": "Spots with their own sensor",
+          "firing_rating": "Firing from rating",
+          "cyclone_radius_km": "Cyclone warning radius",
+          "grid_hours": "Global waves and weather update",
+          "custom_spots": "Custom spots"
+        },
+        "data_description": {
+          "sources": "Global waves and weather draw the sea and the storms on the globe. Surf spots rate 112 famous breaks every 6 hours. Tropical cyclones come from GDACS.",
+          "home_spot": "Gets its own sensors (rating, condition, surf height, swell period, wind, water temperature, sea state, tide). 'Nearest spot to home' picks it from your home location.",
+          "watched_spots": "Each one gets a rating sensor with the full forecast as attributes.",
+          "firing_rating": "Rating (0 to 5 stars) from which a spot counts as firing.",
+          "cyclone_radius_km": "The 'Tropical cyclone nearby' sensor turns on when a cyclone or its forecast track comes this close to home.",
+          "grid_hours": "The global grid needs about 2,300 Open-Meteo calls per update (free limit 10,000 per day). The forecast covers 48 hours, so every 12 hours is plenty.",
+          "custom_spots": "One spot per line: name, latitude, longitude, swell direction (from, degrees), optional offshore wind direction (from) and optional min, ideal, max surf height in m. Example: My Reef, 7.81, 98.29, 250, 90, 0.5, 1.2, 2.5"
+        }
+      }
+    },
+    "error": {
+      "no_sources": "Select at least one data source.",
+      "bad_custom_spots": "A custom spot line could not be read. Use: name, lat, lon, swell direction."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "home_rating": {
+        "name": "Home spot rating"
+      },
+      "home_condition": {
+        "name": "Home spot condition",
+        "state": {
+          "flat": "Flat",
+          "poor": "Poor",
+          "fair": "Fair",
+          "good": "Good",
+          "epic": "Epic",
+          "blown_out": "Blown out",
+          "too_big": "Too big"
+        }
+      },
+      "home_surf": {
+        "name": "Home spot surf height"
+      },
+      "home_swell_period": {
+        "name": "Home spot swell period"
+      },
+      "home_wind": {
+        "name": "Home spot wind"
+      },
+      "home_water_temperature": {
+        "name": "Home spot water temperature"
+      },
+      "home_sea_state": {
+        "name": "Home spot sea state",
+        "state": {
+          "calm_glassy": "Calm (glassy)",
+          "calm_rippled": "Calm (rippled)",
+          "smooth": "Smooth",
+          "slight": "Slight",
+          "moderate": "Moderate",
+          "rough": "Rough",
+          "very_rough": "Very rough",
+          "high": "High",
+          "very_high": "Very high",
+          "phenomenal": "Phenomenal"
+        }
+      },
+      "home_next_tide": {
+        "name": "Home spot next tide"
+      },
+      "spots_firing": {
+        "name": "Spots firing"
+      },
+      "best_spot": {
+        "name": "Best spot right now"
+      },
+      "cyclones": {
+        "name": "Tropical cyclones"
+      },
+      "nearest_cyclone": {
+        "name": "Nearest tropical cyclone"
+      },
+      "gale_areas": {
+        "name": "Gale areas at sea"
+      },
+      "status": {
+        "name": "Data sources",
+        "state": {
+          "ok": "OK",
+          "degraded": "Degraded",
+          "waiting": "Waiting"
+        }
+      },
+      "spot_rating": {
+        "name": "{spot} rating"
+      }
+    },
+    "binary_sensor": {
+      "home_firing": {
+        "name": "Home spot firing"
+      },
+      "cyclone_nearby": {
+        "name": "Tropical cyclone nearby"
+      }
+    }
+  },
+  "issues": {
+    "source_down": {
+      "title": "{source} is not reachable",
+      "description": "Sea State Forecast could not load data from {source} for more than {hours} hours. The last known data is still shown. Nothing needs to be done if the source is only temporarily down; this notice disappears on its own once the source answers again."
+    }
+  }
+}
