@@ -3,7 +3,7 @@
  * https://github.com/mb26-dev/ha-sea-state
  */
 
-import { DEG, ecef, viewFrame, sunDirection, loadEarth, renderEarth, upsampleGrid, waveColor, WAVE_STOPS } from "./sea-state-earth.js?v=0.1.0b8";
+import { DEG, ecef, viewFrame, sunDirection, loadEarth, renderEarth, upsampleGrid, waveColor, WAVE_STOPS } from "./sea-state-earth.js?v=0.1.0b9";
 import {
   CONDITION_COLORS,
   CONDITION_LABELS,
@@ -13,9 +13,10 @@ import {
   cloudSprite,
   drawLightning,
   drawCyclone,
-} from "./sea-state-art.js?v=0.1.0b8";
+} from "./sea-state-art.js?v=0.1.0b9";
+import "./sea-state-lightning.js?v=0.1.0b9";
 
-const VERSION = "0.1.0b8";
+const VERSION = "0.1.0b9";
 
 // animated SVG markers, shown as <img> above the globe so their own animations run
 const ICON_BASE = new URL("./icons/", import.meta.url);
