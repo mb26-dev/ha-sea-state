@@ -331,3 +331,38 @@ if __name__ == "__main__":
         t()
         print(f"ok  {t.__name__}")
     print(f"{len(tests)} tests passed")
+
+
+def test_webcams_parse():
+    if "aiohttp" not in sys.modules:
+        try:
+            import aiohttp  # noqa: F401
+        except ImportError:  # only the parser is tested here
+            import types
+            sys.modules["aiohttp"] = types.ModuleType("aiohttp")
+    parse_webcams = load("webcams").parse_webcams
+
+    payload = {
+        "total": 4,
+        "webcams": [
+            {"webcamId": 1, "title": "Town square", "status": "active", "lastUpdatedOn": "2026-11-18T08:00:00.000Z",
+             "categories": [{"id": "city", "name": "City"}],
+             "images": {"current": {"thumbnail": "https://img/1t.jpg", "preview": "https://img/1p.jpg"}},
+             "location": {"latitude": 8.04, "longitude": 98.81, "city": "Ao Nang"},
+             "urls": {"detail": "https://windy.com/webcams/1"}, "player": {"day": "https://player/1"}},
+            {"webcamId": 2, "title": "Beach cam", "status": "active", "lastUpdatedOn": "2026-11-18T08:05:00.000Z",
+             "categories": [{"id": "beach", "name": "Beach"}],
+             "images": {"current": {"thumbnail": "https://img/2t.jpg"}},
+             "location": {"latitude": 8.10, "longitude": 98.85, "city": "Ao Nang"},
+             "urls": {"detail": "https://windy.com/webcams/2"}},
+            {"webcamId": 3, "title": "Dead", "status": "inactive",
+             "images": {"current": {"preview": "https://img/3p.jpg"}}, "urls": {"detail": "x"}},
+            {"webcamId": 4, "title": "No link", "status": "active",
+             "images": {"current": {"preview": "https://img/4p.jpg"}}, "location": {"latitude": 8.04, "longitude": 98.81}},
+        ],
+    }
+    cams = parse_webcams(payload, 8.04, 98.81)
+    assert [c["id"] for c in cams] == [2, 1]  # sea facing first, inactive and unlinked ones dropped
+    assert cams[0]["image"] == "https://img/2t.jpg" and cams[1]["image"] == "https://img/1p.jpg"
+    assert cams[1]["distance_km"] == 0.0 and cams[0]["link"] == "https://windy.com/webcams/2"
+    assert parse_webcams({}, 0, 0) == []
