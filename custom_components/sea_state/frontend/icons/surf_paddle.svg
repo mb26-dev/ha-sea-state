@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Paddling Surfer Marker">
+  <defs>
+    <linearGradient id="boardGrad2" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="50%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#e0f2fe" />
+    </linearGradient>
+
+    <linearGradient id="suitGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#090d16" />
+    </linearGradient>
+
+    <linearGradient id="waterLine2" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.15" />
+      <stop offset="28%" stop-color="#e0f2fe" stop-opacity="0.95" />
+      <stop offset="72%" stop-color="#67e8f9" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.15" />
+    </linearGradient>
+
+    <filter id="markerShadow2" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#020617" flood-opacity="0.7" />
+    </filter>
+
+    <clipPath id="ringClip2">
+      <circle cx="64" cy="64" r="54" />
+    </clipPath>
+
+    <style>
+      .board-float {
+        transform-origin: 64px 68px;
+        animation: floatBob 2.6s ease-in-out infinite alternate;
+      }
+      .paddle-arm {
+        transform-origin: 69px 63px;
+        animation: paddleStroke 1.8s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+      }
+      .ripple-top {
+        animation: rippleFlow 2.4s ease-in-out infinite alternate;
+      }
+      .ripple-sub {
+        animation: rippleFlow 2.4s ease-in-out 0.7s infinite alternate;
+      }
+      .splash-a {
+        animation: splashRise 1.8s ease-out infinite;
+      }
+      .splash-b {
+        animation: splashRise 1.8s ease-out 0.25s infinite;
+      }
+      @keyframes floatBob {
+        0% { transform: translateY(1.3px) rotate(-1.5deg); }
+        100% { transform: translateY(-1.5px) rotate(1.5deg); }
+      }
+      @keyframes paddleStroke {
+        0% { transform: rotate(-30deg); }
+        45% { transform: rotate(22deg); }
+        75% { transform: rotate(36deg) translateY(-1.5px); }
+        100% { transform: rotate(-30deg); }
+      }
+      @keyframes rippleFlow {
+        0% { transform: translateX(-2px); opacity: 0.8; }
+        100% { transform: translateX(2px); opacity: 1; }
+      }
+      @keyframes splashRise {
+        0%, 35% { opacity: 0; transform: translate(0, 0) scale(0.6); }
+        55% { opacity: 1; transform: translate(-2.5px, -3.5px) scale(1.15); }
+        100% { opacity: 0; transform: translate(-5.5px, -1px) scale(0.7); }
+      }
+    </style>
+  </defs>
+
+  <!-- Fully Transparent Interior Clipped to Ring -->
+  <g clip-path="url(#ringClip2)" filter="url(#markerShadow2)">
+    <!-- Floating Surfer & Surfboard -->
+    <g class="board-float">
+      <!-- Surfboard Fin -->
+      <path d="M 43 70.5 L 39.5 76.5 L 47.5 71.5 Z" fill="#0369a1" />
+
+      <!-- Sleek Surfboard -->
+      <path d="M 35 68.5 C 38 65.5, 79 65.5, 91 68.5 C 93.5 69.2, 93.5 70.6, 90 71.4 C 77 73.2, 39 72.5, 35 68.5 Z" fill="url(#boardGrad2)" stroke="#0f172a" stroke-width="0.85" />
+      <path d="M 41 68.2 C 57 67, 75 67, 87 68.6" fill="none" stroke="#ffffff" stroke-width="1" stroke-opacity="0.75" stroke-linecap="round" />
+
+      <!-- Prone Surfer Body (Arched Chest & Tapered Legs) -->
+      <path d="M 37.5 65.8 C 43 64.5, 53 63.2, 62.5 61.5 C 67.5 60.6, 71.5 61.8, 74 64.8 L 62 66.5 L 38.5 67.2 Z" fill="url(#suitGrad2)" stroke="#e0f2fe" stroke-width="0.6" stroke-linejoin="round" />
+      <!-- Wetsuit Cyan Shoulder Accent -->
+      <path d="M 61 63 L 67 62.5" fill="none" stroke="#38bdf8" stroke-width="0.9" stroke-linecap="round" />
+
+      <!-- Surfer Head Looking Forward -->
+      <circle cx="77.5" cy="59" r="4.2" fill="#f1c27d" stroke="#0f172a" stroke-width="0.6" />
+      <path d="M 73.6 58 C 74.2 54.5, 80.8 54.5, 81.4 58 C 79.2 56.8, 75.8 56.8, 73.6 58 Z" fill="#1e1b18" />
+
+      <!-- Animated Paddling Arm Dipping Into Water -->
+      <g class="paddle-arm">
+        <path d="M 67.2 62.5 L 70.2 62.5 L 69.6 76.5 C 69.5 78.2, 67 78.2, 67 76.5 Z" fill="url(#suitGrad2)" stroke="#e0f2fe" stroke-width="0.6" stroke-linejoin="round" />
+      </g>
+    </g>
+
+    <!-- Water Surface Lines & Wake Ripples -->
+    <path class="ripple-top" d="M 22 72.5 Q 45 70.8 64 72.5 T 106 72.5" fill="none" stroke="url(#waterLine2)" stroke-width="2.3" stroke-linecap="round" />
+    <path class="ripple-sub" d="M 34 77.5 Q 52 76 66 77.5 T 94 77.5" fill="none" stroke="#7dd3fc" stroke-width="1.4" stroke-opacity="0.8" stroke-linecap="round" />
+
+    <!-- Paddle Splash Droplets -->
+    <g fill="#ffffff">
+      <circle class="splash-a" cx="63" cy="71.5" r="1.5" />
+      <circle class="splash-b" cx="59.5" cy="73.5" r="1.2" />
+    </g>
+  </g>
+
+  <!-- Crisp Pure White Outer Ring -->
+  <circle cx="64" cy="64" r="56" fill="none" stroke="#ffffff" stroke-width="4.5" filter="url(#markerShadow2)" />
+</svg>

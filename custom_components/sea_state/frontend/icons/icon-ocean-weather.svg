@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Ocean and Weather Icon">
+  <defs>
+    <linearGradient id="sunGradOW" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fde047" />
+      <stop offset="55%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#ea580c" />
+    </linearGradient>
+
+    <linearGradient id="waveGradOW" x1="15%" y1="100%" x2="85%" y2="0%">
+      <stop offset="0%" stop-color="#0369a1" />
+      <stop offset="55%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#38bdf8" />
+    </linearGradient>
+
+    <linearGradient id="crestGradOW" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#bae6fd" />
+      <stop offset="50%" stop-color="#f0f9ff" />
+      <stop offset="100%" stop-color="#ffffff" />
+    </linearGradient>
+  </defs>
+
+  <!-- Warm Weather Sun Disk (Upper Right) -->
+  <circle cx="22.5" cy="9.5" r="5.2" fill="url(#sunGradOW)" />
+
+  <!-- Crisp Wind Gust Streamlines (Upper Left) -->
+  <path d="M 4.5 9.5 L 13.5 9.5 C 15.2 9.5, 16 8.3, 15 7.2" fill="none" stroke="#7dd3fc" stroke-width="1.8" stroke-linecap="round" />
+  <path d="M 6.5 13 L 12 13" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.85" />
+
+  <!-- Main Curling Ocean Wave -->
+  <path d="M 3.5 25.5 C 9.5 24, 13.5 18.5, 17.5 13 C 20.5 9, 26.5 9.5, 28 14.8 C 25.2 12.8, 22 14, 21.3 17.2 C 20.6 20.4, 23.5 23.8, 28.5 25.5 C 20.5 27, 11 27, 3.5 25.5 Z" fill="url(#waveGradOW)" />
+
+  <!-- Inner Wave Face Highlight -->
+  <path d="M 9.5 24.5 C 14 22.2, 17.2 18.2, 19.8 14.2" fill="none" stroke="#7dd3fc" stroke-width="1.2" stroke-linecap="round" stroke-opacity="0.85" />
+
+  <!-- White Foam Lip -->
+  <path d="M 6 24.8 C 11.2 23, 14.8 17.8, 18.2 13 C 20.8 9.4, 26.2 9.8, 28 14.8" fill="none" stroke="url(#crestGradOW)" stroke-width="2.2" stroke-linecap="round" />
+</svg>
