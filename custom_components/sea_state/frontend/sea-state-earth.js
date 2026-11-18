@@ -166,6 +166,60 @@ export function waveColor(m) {
   return [WAVE_LUT[i * 3], WAVE_LUT[i * 3 + 1], WAVE_LUT[i * 3 + 2]];
 }
 
+function catmull(p0, p1, p2, p3, t) {
+  const t2 = t * t, t3 = t2 * t;
+  return 0.5 * (2 * p1 + (p2 - p0) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (3 * p1 - p0 - 3 * p2 + p3) * t3);
+}
+
+/**
+ * Upsample a coarse lat/lon grid (rows = latitude, columns wrap around in longitude)
+ * by `factor` with Catmull-Rom splines. Plain bilinear filtering of a 6° grid shows
+ * straight edges and diamond shapes on the globe; the spline gives smooth, round
+ * gradients. Values never drop below `min`. Returns { data, nlat, nlon, step }.
+ */
+export function upsampleGrid(src, nlat, nlon, step, factor, min = 0, max = Infinity) {
+  const fl = (nlat - 1) * factor + 1;
+  const fn = nlon * factor;
+  // longitude first (wraps), then latitude (clamped at the ends)
+  const rows = new Float32Array(nlat * fn);
+  for (let i = 0; i < nlat; i++) {
+    const base = i * nlon;
+    for (let J = 0; J < fn; J++) {
+      const j = Math.floor(J / factor);
+      const t = (J % factor) / factor;
+      const a = src[base + ((j - 1 + nlon) % nlon)];
+      const b = src[base + j];
+      const c = src[base + ((j + 1) % nlon)];
+      const d = src[base + ((j + 2) % nlon)];
+      let v = t === 0 ? b : catmull(a, b, c, d, t);
+      if (!(v === v)) v = b === b ? (c === c ? b + (c - b) * t : b) : c;
+      rows[i * fn + J] = v;
+    }
+  }
+  const out = new Float32Array(fl * fn);
+  for (let I = 0; I < fl; I++) {
+    const i = Math.min(nlat - 1, Math.floor(I / factor));
+    const t = I >= (nlat - 1) * factor ? 0 : (I % factor) / factor;
+    const i0 = Math.max(0, i - 1), i2 = Math.min(nlat - 1, i + 1), i3 = Math.min(nlat - 1, i + 2);
+    for (let J = 0; J < fn; J++) {
+      const b = rows[i * fn + J];
+      let v = b;
+      if (t > 0) v = catmull(rows[i0 * fn + J], b, rows[i2 * fn + J], rows[i3 * fn + J], t);
+      if (v === v) {
+        if (v < min) v = min;
+        if (v > max) v = max;
+      } else {
+        // a NaN neighbour: fall back to plain linear blending of what exists
+        const c = rows[i2 * fn + J];
+        v = b === b ? (c === c ? b + (c - b) * t : b) : c;
+        if (v === v) v = Math.min(max, Math.max(min, v));
+      }
+      out[I * fn + J] = v;
+    }
+  }
+  return { data: out, nlat: fl, nlon: fn, step: step / factor };
+}
+
 /**
  * Render the globe into `canvas` (width x height pixels).
  * G: view frame, sunE: sun direction, R: globe radius in pixels.

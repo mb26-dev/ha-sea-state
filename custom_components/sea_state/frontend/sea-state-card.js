@@ -3,7 +3,7 @@
  * https://github.com/mb26-dev/ha-sea-state
  */
 
-import { DEG, ecef, viewFrame, sunDirection, loadEarth, renderEarth, waveColor, WAVE_STOPS } from "./sea-state-earth.js?v=0.1.0b2";
+import { DEG, ecef, viewFrame, sunDirection, loadEarth, renderEarth, upsampleGrid, waveColor, WAVE_STOPS } from "./sea-state-earth.js?v=0.1.0b3";
 import {
   CONDITION_COLORS,
   CONDITION_LABELS,
@@ -13,9 +13,9 @@ import {
   cloudSprite,
   drawLightning,
   drawCyclone,
-} from "./sea-state-art.js?v=0.1.0b2";
+} from "./sea-state-art.js?v=0.1.0b3";
 
-const VERSION = "0.1.0b2";
+const VERSION = "0.1.0b3";
 
 // animated SVG markers, shown as <img> above the globe so their own animations run
 const ICON_BASE = new URL("./icons/", import.meta.url);
@@ -307,6 +307,7 @@ const STYLE = `
   .markers { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
   .markers img { position: absolute; left: 0; top: 0; display: block; will-change: transform; user-select: none; -webkit-user-drag: none; }
   .markers img.sel { filter: drop-shadow(0 0 7px rgba(255,255,255,.85)); }
+  .markers .cbadge { position: absolute; left: 0; top: 0; min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: #0b1622; border: 1.5px solid rgba(255,255,255,.85); color: #fff; font: 700 10.5px/15px system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; text-align: center; will-change: transform; box-shadow: 0 1px 4px rgba(0,0,0,.5); }
   .top { position: absolute; top: 10px; left: 12px; right: 12px; pointer-events: none; display: flex; flex-direction: column; gap: 7px; }
   .title { display: flex; align-items: baseline; gap: 8px; min-width: 0; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
   .title b { font-size: 16px; letter-spacing: .4px; font-weight: 650; flex: 0 0 auto; }
@@ -314,6 +315,9 @@ const STYLE = `
   .title .sub { font-size: 12px; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; pointer-events: auto; padding-bottom: 2px; }
   .chips::-webkit-scrollbar { display: none; }
+  .chips.fr { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 46px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 46px), transparent); }
+  .chips.fl { -webkit-mask-image: linear-gradient(90deg, transparent, #000 46px); mask-image: linear-gradient(90deg, transparent, #000 46px); }
+  .chips.fl.fr { -webkit-mask-image: linear-gradient(90deg, transparent, #000 46px, #000 calc(100% - 46px), transparent); mask-image: linear-gradient(90deg, transparent, #000 46px, #000 calc(100% - 46px), transparent); }
   .chip { flex: 0 0 auto; font-size: 11.5px; padding: 4px 10px; border-radius: 14px; cursor: pointer;
     background: rgba(8,16,26,.62); border: 1px solid rgba(255,255,255,.12); color: #e3eef5;
     backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); white-space: nowrap; }
@@ -376,6 +380,13 @@ const STYLE = `
   .head .big small { font-size: 12px; font-weight: 500; opacity: .75; margin-left: 2px; }
   .chart { margin: 8px 0 2px; }
   .chart svg { width: 100%; height: 64px; display: block; }
+  .group { display: grid; gap: 4px; margin-top: 4px; }
+  .group button { all: unset; cursor: pointer; display: grid; grid-template-columns: 10px minmax(0,1fr) auto auto; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 8px; background: rgba(255,255,255,.05); font-size: 12px; }
+  .group button:hover { background: rgba(255,255,255,.12); }
+  .group .dot { width: 9px; height: 9px; border-radius: 50%; }
+  .group .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .group .s { color: #ffcf3a; letter-spacing: .5px; white-space: nowrap; }
+  .group .m { opacity: .75; white-space: nowrap; }
   .days { margin-top: 8px; display: grid; grid-template-columns: auto auto minmax(0,1fr) auto; gap: 3px 8px; font-size: 11.5px; align-items: center; }
   .days .d { opacity: .8; white-space: nowrap; }
   .days .s { color: #ffcf3a; letter-spacing: .5px; white-space: nowrap; }
@@ -683,6 +694,15 @@ class SeaStateCard extends HTMLElement {
   }
 
   _scrollable(row) {
+    // fade the edge where more chips are hidden, so it is clear the row scrolls
+    const fade = () => {
+      const max = row.scrollWidth - row.clientWidth;
+      row.classList.toggle("fl", max > 2 && row.scrollLeft > 2);
+      row.classList.toggle("fr", max > 2 && row.scrollLeft < max - 2);
+    };
+    row._fade = fade;
+    row.addEventListener("scroll", fade, { passive: true });
+    if (typeof ResizeObserver === "function") new ResizeObserver(fade).observe(row);
     row.addEventListener(
       "wheel",
       (e) => {
@@ -933,10 +953,14 @@ class SeaStateCard extends HTMLElement {
           uy[i] = Math.cos(da * DEG) * (1 - f) + Math.cos(db * DEG) * f;
         }
       }
+      const hFilled = fillLand(h, o.nlat, o.nlon, 6);
       out.ocean = {
         nlat: o.nlat, nlon: o.nlon, lat0: o.lat0, lon0: o.lon0, step: o.step,
-        h: fillLand(h, o.nlat, o.nlon, 3), p: fillLand(p, o.nlat, o.nlon, 3), w: fillLand(w, o.nlat, o.nlon, 3),
+        h: hFilled, p: fillLand(p, o.nlat, o.nlon, 3), w: fillLand(w, o.nlat, o.nlon, 3),
         ux: fillLand(ux, o.nlat, o.nlon, 3), uy: fillLand(uy, o.nlat, o.nlon, 3), mask,
+        // smooth version for painting the globe (the coarse grid shows edges otherwise)
+        fine: upsampleGrid(hFilled, o.nlat, o.nlon, o.step, 4, 0),
+        fineMask: upsampleGrid(mask, o.nlat, o.nlon, o.step, 4, 0, 1),
       };
     }
     const wx = g.weather;
@@ -1109,6 +1133,7 @@ class SeaStateCard extends HTMLElement {
     });
     this._regionsEl.innerHTML = html.join("");
     this._regionsEl.querySelectorAll(".chip").forEach((el) => el.addEventListener("click", () => this._goRegion(el.dataset.r)));
+    requestAnimationFrame(() => this._regionsEl?._fade?.());
   }
 
   _goRegion(key) {
@@ -1343,6 +1368,17 @@ class SeaStateCard extends HTMLElement {
   }
 
   _tap(x, y) {
+    const cl = this._clusterAt(x, y);
+    if (cl) {
+      // spots lying on top of each other: zoom in until they separate
+      const lat = cl.members.reduce((a, m) => a + m.lat, 0) / cl.members.length;
+      const lon = cl.members.reduce((a, m) => a + m.lon, 0) / cl.members.length;
+      const span = Math.max(0.05, ...cl.members.map((m) => distKm(lat, lon, m.lat, m.lon))) / 111;
+      this._selected = { kind: "group", v: { lat, lon, members: cl.members } };
+      this._renderInfo();
+      if (this._view.zoom < ZOOM_MAX * 0.6) this._flyTo(lat, lon, clamp(Math.max(this._view.zoom * 2.2, 40 / span), this._view.zoom * 1.6, ZOOM_MAX));
+      return;
+    }
     const hit = this._hitTest(x, y);
     if (hit) {
       this._selected = hit;
@@ -1360,6 +1396,14 @@ class SeaStateCard extends HTMLElement {
       this._selected = null;
       this._renderInfo();
     }
+  }
+
+  /** a spot group whose badge (not its leading spot) was tapped */
+  _clusterAt(x, y) {
+    for (const c of this._clusters || []) {
+      if (Math.hypot(c.bx - x, c.by - y) <= 14) return c;
+    }
+    return null;
   }
 
   _hitTest(x, y) {
@@ -1438,6 +1482,28 @@ class SeaStateCard extends HTMLElement {
     });
   }
 
+  /** spots that share one place on the globe: pick one */
+  _groupInfo(g) {
+    const list = g.members
+      .map((m) => this._spots.find((s) => s.id === m.id) || m)
+      .map((s) => ({ s, now: this._spotAt(s) }))
+      .sort((a, b) => (b.now?.rating ?? -1) - (a.now?.rating ?? -1));
+    const rows = list.map(({ s, now }) => {
+      const color = now ? CONDITION_COLORS[now.condition] || "#9ab" : "#6d7f8c";
+      return `<button data-id="${esc(s.id)}"><span class="dot" style="background:${color}"></span><span class="n">${esc(s.name)}</span><span class="s">${now ? starsHtml(now.rating) : ""}</span><span class="m">${now ? this._len(now.surf_m) : ""}</span></button>`;
+    });
+    const area = list[0]?.s.area || "";
+    this._infoShell(`${list.length} spots`, area, `<div class="group">${rows.join("")}</div>`);
+    for (const btn of this._info.querySelectorAll(".group button")) {
+      btn.addEventListener("click", () => {
+        const s = this._spots.find((x) => x.id === btn.dataset.id);
+        if (!s) return;
+        this._selected = { kind: "spot", v: s };
+        this._renderInfo();
+      });
+    }
+  }
+
   _renderInfo() {
     const sel = this._selected;
     this._stage.classList.toggle("info-open", !!sel);
@@ -1449,6 +1515,7 @@ class SeaStateCard extends HTMLElement {
     if (sel.kind === "spot") this._spotInfo(this._spots.find((s) => s.id === sel.v.id) || sel.v);
     else if (sel.kind === "cyclone") this._cycloneInfo(this._cyclones.find((c) => c.id === sel.v.id) || sel.v);
     else if (sel.kind === "storm") this._stormInfo(sel.v);
+    else if (sel.kind === "group") this._groupInfo(sel.v);
     else this._pointInfo(sel.v);
   }
 
@@ -1730,7 +1797,12 @@ class SeaStateCard extends HTMLElement {
     const R = this._R() * (W / this._w);
     const f = this._field?.ocean;
     const amount = this._waveAmount();
-    const waves = f && amount > 0 ? { field: f.h, mask: f.mask, nlat: f.nlat, nlon: f.nlon, lat0: f.lat0, lon0: f.lon0, step: f.step, amount } : null;
+    const fine = f && f.fine;
+    const waves = f && amount > 0
+      ? (fine
+        ? { field: fine.data, mask: f.fineMask.data, nlat: fine.nlat, nlon: fine.nlon, lat0: f.lat0, lon0: f.lon0, step: fine.step, amount }
+        : { field: f.h, mask: f.mask, nlat: f.nlat, nlon: f.nlon, lat0: f.lat0, lon0: f.lon0, step: f.step, amount })
+      : null;
     renderEarth(this._cEarth, this._earth, this._frame(), this._sun || sunDirection(this._now()), W, H, R, waves);
   }
 
@@ -1812,6 +1884,20 @@ class SeaStateCard extends HTMLElement {
         img._op = op;
       }
       img.classList.toggle("sel", !!it.sel);
+      if (it.badge) {
+        const bid = `${it.id}#badge`;
+        let b = map.get(bid);
+        if (!b) {
+          b = document.createElement("div");
+          b.className = "cbadge";
+          this._markers.appendChild(b);
+          map.set(bid, b);
+        }
+        seen.add(bid);
+        if (b.textContent !== it.badge) b.textContent = it.badge;
+        b.style.transform = `translate(${(it.x + sz * 0.22).toFixed(1)}px, ${(it.y - sz * 0.5 - 2).toFixed(1)}px)`;
+        b.style.opacity = op;
+      }
     }
     for (const [id, img] of map) {
       if (!seen.has(id)) {
@@ -2016,7 +2102,7 @@ class SeaStateCard extends HTMLElement {
       const a = smooth(0.05, 0.25, pr.z);
       let r;
       if (this._iconsReady && ICON_TEXT.gale) {
-        const size = clamp(24 + 4 * Math.sqrt(s.cells || 1) + 6 * Math.log2(Math.max(1, zoom)), 30, 56);
+        const size = clamp(34 + 6 * Math.sqrt(s.cells || 1) + 8 * Math.log2(Math.max(1, zoom)), 40, 72);
         r = size / 2;
         const sel = this._selected && this._selected.kind === "storm" && this._selected.v === s;
         this._icons.push({ id: `gale:${s.lat.toFixed(1)},${s.lon.toFixed(1)}`, kind: "gale", ring: null, x: pr.x, y: pr.y, size, alpha: a, sel });
@@ -2133,6 +2219,7 @@ class SeaStateCard extends HTMLElement {
   }
 
   _drawSpots(ctx, G, R, zoom, zf, t, sun, hits) {
+    this._clusters = [];
     if (this._config.spots === false) return;
     const surf = this._showSurf();
     const W = this._w, H = this._h;
@@ -2151,6 +2238,7 @@ class SeaStateCard extends HTMLElement {
     const figures = this._iconsReady && (surf ? zoom >= 1.9 : zoom >= 4);
     const placed = [];
     const draws = [];
+    const clusters = [];
     for (const it of items) {
       const { s, now, pr } = it;
       const sel = this._selected && this._selected.kind === "spot" && this._selected.v.id === s.id;
@@ -2158,9 +2246,18 @@ class SeaStateCard extends HTMLElement {
       const alpha = smooth(0.03, 0.2, pr.z);
       const ex = s.p[0] * sun[0] + s.p[1] * sun[1] + s.p[2] * sun[2];
       const night = smooth(0.08, -0.14, ex);
-      const big = !!(figures && now && (sel || (placed.length < MAX_SPOT_ICONS && !placed.some((q) => Math.hypot(q.x - pr.x, q.y - pr.y) < iconSize * 0.92))));
-      if (big) placed.push({ x: pr.x, y: pr.y });
-      draws.push({ s, now, pr, sel, color, alpha, night, big });
+      if (figures && now && !sel) {
+        // a better spot already sits here: join its group instead of hiding under it
+        const host = placed.find((q) => Math.hypot(q.x - pr.x, q.y - pr.y) < iconSize * 1.15);
+        if (host) {
+          host.members.push(s);
+          continue;
+        }
+      }
+      const big = !!(figures && now && (sel || placed.length < MAX_SPOT_ICONS));
+      const d = { s, now, pr, sel, color, alpha, night, big, members: [s] };
+      if (big) placed.push({ x: pr.x, y: pr.y, members: d.members });
+      draws.push(d);
     }
     // small dots first, figures on top, back to front
     draws.sort((a, b) => (a.big === b.big ? a.pr.y - b.pr.y : a.big ? 1 : -1));
@@ -2168,16 +2265,20 @@ class SeaStateCard extends HTMLElement {
       const { s, now, pr, sel, color, alpha, night, big } = d;
       if (big) {
         const kind = POSE_ICON[now.pose] || "riding";
+        const size = iconSize * (sel ? 1.18 : 1);
+        const extra = d.members.length - 1;
         this._icons.push({
           id: `spot:${s.id}`,
           kind,
           ring: OWN_RING.has(kind) ? null : color,
           x: pr.x,
           y: pr.y,
-          size: iconSize * (sel ? 1.18 : 1),
+          size,
           alpha: alpha * (1 - 0.3 * night),
           sel,
+          badge: extra > 0 ? `+${extra}` : null,
         });
+        if (extra > 0) clusters.push({ members: d.members, bx: pr.x + size * 0.22 + 9, by: pr.y - size * 0.5 + 7 });
         hits.push({ kind: "spot", v: s, x: pr.x, y: pr.y, r: Math.max(16, iconSize * 0.55) });
       } else {
         const r = surf ? clamp(2.4 * zf, 2.5, 6) : clamp(1.8 * zf, 2, 4.5);
@@ -2185,19 +2286,22 @@ class SeaStateCard extends HTMLElement {
         hits.push({ kind: "spot", v: s, x: pr.x, y: pr.y, r: Math.max(10, r * 2.5) });
       }
     }
+    this._clusters = clusters;
     // labels for the best and the selected spots
     if (this._config.labels === false || !surf) return;
     ctx.save();
     ctx.font = "600 10.5px system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
     ctx.textBaseline = "middle";
-    const rects = [];
+    // labels never cover a surfer
+    const rects = draws.filter((d) => d.big).map((d) => [d.pr.x - iconSize * 0.45, d.pr.y - iconSize * 0.45, iconSize * 0.9, iconSize * 0.9]);
     const top = 92;
     for (const d of draws.slice().sort((a, b) => (b.sel ? 1 : 0) - (a.sel ? 1 : 0) || (b.now?.rating ?? 0) - (a.now?.rating ?? 0))) {
       const { s, now, pr, sel, big } = d;
       if (!now) continue;
-      const show = sel || (now.rating >= thr && zoom >= 1.6) || (zoom >= 4 && big) || zoom >= 7;
+      const show = sel || (now.rating >= thr && zoom >= 1.6) || (zoom >= 2.6 && big) || zoom >= 5;
       if (!show) continue;
-      const text = `${s.name} ${now.rating.toFixed(1)}★`;
+      const extra = d.members ? d.members.length - 1 : 0;
+      const text = `${s.name} ${now.rating.toFixed(1)}★${extra > 0 ? `  +${extra}` : ""}`;
       const tw = ctx.measureText(text).width;
       const lx = pr.x + (big ? iconSize * 0.55 + 5 : 8);
       const ly = pr.y;
