@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0b4 (beta)
+
+- Shark areas: 33 spots in Hawaii, California, the US East Coast, Australia, South Africa and Réunion show a small shark marker next to the surfer
+- The spot details get a shark section: species, local safety measures (nets, drumlines, spotters, drones) and a link to the official live service of the area (SharkSmart WA, SharkSmart NSW, SharkSmart Queensland, VicEmergency, Shark Spotters, KwaZulu-Natal Sharks Board, Centre Sécurité Requin, Hawaii DLNR, California Fish and Wildlife)
+- New card option `sharks` (on by default) and new spot sensor attributes `shark_species`, `shark_measures`, `shark_service` and `shark_service_url`
+- This is background information, not a live warning; the live sightings stay with the official services
+
 ## 0.1.0b3 (beta)
 
 - Spots that lie on top of each other (Uluwatu, Padang Padang, Keramas ...) are grouped: the best one shows its surfer with a +2 badge; tap the badge for the list, the globe zooms in until they separate

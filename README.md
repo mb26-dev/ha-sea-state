@@ -45,6 +45,7 @@ No API key, no account.
 - **Tropical cyclones** (hurricanes, typhoons, cyclones) from GDACS as rotating spirals with their past and forecast track, coloured by category
 - **Gale areas at sea** (Beaufort 8 and more) with wind and pressure
 - **Surf spots** with a little surfer: sitting on a flat sea, paddling, riding, in the barrel when it is epic, a red flag when it is too big, spray when it is blown out
+- **Shark areas:** spots where sharks are part of the local ecosystem get a small shark marker, and their details name the species, the local safety measures and the official live service for the area
 - **Three modes:** Ocean & weather, Surf, or All, plus a **Firing** filter for the spots that work right now
 - **Region buttons:** surf regions (Hawaii, Indonesia, Europe ...) in surf mode, ocean basins (North Atlantic, West Pacific, Andaman Sea ...) in ocean mode, each with its number of firing spots or storms
 - **Forecast button:** play the next 48 hours: waves, wind, clouds, rain and cyclones move on the globe, surfers change with the forecast
@@ -72,6 +73,7 @@ No API key, no account.
 | `sensor.sea_state_nearest_tropical_cyclone` | name of the nearest cyclone | distance now, closest forecast approach and its time |
 | `sensor.sea_state_gale_areas_at_sea` | areas with gale force winds at sea | position, wind, pressure, rain |
 | `sensor.sea_state_<spot>_rating` | rating of each spot you picked | the full forecast like the home spot |
+| shark attributes (spots in shark areas) | on the spot rating sensors | `shark_species`, `shark_measures`, `shark_service`, `shark_service_url` |
 | `binary_sensor.sea_state_home_spot_firing` | on while your home spot is firing | rating, surf, swell, wind, best window |
 | `binary_sensor.sea_state_tropical_cyclone_nearby` | on while a cyclone or its forecast track is within your radius | name, category, wind, distance, closest approach |
 | `sensor.sea_state_data_sources` (diagnostic) | ok, degraded or waiting | status of every feed, number of ocean and land points |
@@ -136,6 +138,7 @@ clouds: true
 rain: true             # rain and lightning
 cyclones: true
 spots: true
+sharks: true           # shark markers and details for spots in shark areas
 labels: true           # names of firing spots
 regions: true          # region buttons
 forecast: true         # 48 hour forecast button
@@ -163,6 +166,27 @@ Ocean basins for `center`: `north_atlantic`, `caribbean`, `east_pacific`, `north
 | `pacific` | New Zealand & Pacific islands | Manu Bay, Piha, Wainui Beach, Cloudbreak, Teahupo'o |
 
 Positions, swell windows and size ranges are approximate and meant for a model based rating. Corrections and new spots are welcome as issues.
+
+### Shark areas
+
+Some of the best breaks in the world are also home to sharks. Sea State Forecast does not have live shark data: sightings, detections and beach closures are published by local services, and the card links to them.
+
+| Area | Spots | Species | Official live service |
+| --- | --- | --- | --- |
+| Hawaii | all Hawaiian spots | Tiger sharks | [Hawaii DLNR Sharks](https://dlnr.hawaii.gov/sharks/) |
+| California | Mavericks, Ocean Beach, Steamer Lane, Rincon, Malibu, Huntington, Trestles, Black's | White sharks | [California Fish and Wildlife](https://wildlife.ca.gov/Conservation/Marine/White-Shark) |
+| US East Coast | Cape Hatteras, Ditch Plains, Cocoa Beach | Bull, blacktip, spinner and juvenile white sharks | [International Shark Attack File](https://www.floridamuseum.ufl.edu/shark-attacks/) |
+| Western Australia | Margaret River | White sharks | [SharkSmart WA](https://www.sharksmart.com.au/shark-activity) |
+| New South Wales | The Pass, North Narrabeen, Bondi | White, bull and tiger sharks | [SharkSmart NSW](https://www.sharksmart.nsw.gov.au/shark-activity) |
+| Queensland | Snapper Rocks, Kirra, Burleigh Heads, Noosa | Bull and tiger sharks | [SharkSmart Queensland](https://www.dpi.qld.gov.au/news-media/campaigns/sharksmart) |
+| Victoria | Bells Beach | White sharks, bronze whalers | [VicEmergency](https://vfa.vic.gov.au/education/shark-smart/quick-links/current-sightings-and-warnings) |
+| Tasmania | Shipstern Bluff | White sharks | – |
+| Cape Town | Muizenberg, Dungeons | White sharks | [Shark Spotters](https://sharkspotters.org.za) |
+| Eastern Cape | Jeffreys Bay | White sharks | – |
+| KwaZulu-Natal | New Pier (Durban) | Bull, tiger and white sharks | [KwaZulu-Natal Sharks Board](https://shark.co.za) |
+| Réunion | Saint-Leu | Bull and tiger sharks | [Centre Sécurité Requin](https://www.info-requin.re) |
+
+Shark bites are rare. This is background information, not a live warning: always check the local service and the lifeguards before you paddle out. Corrections and links for more areas are welcome as issues.
 
 ## How the rating works
 
@@ -210,7 +234,8 @@ A star on GitHub, a bug report or a screenshot of your dashboard helps just as m
 - Waves, swell, sea surface temperature, sea level, wind, clouds, rain and pressure: [Open-Meteo](https://open-meteo.com) (CC BY 4.0), with the marine models of ECMWF, Météo-France, DWD and NOAA that Open-Meteo combines
 - Tropical cyclones: [GDACS](https://www.gdacs.org), the Global Disaster Alert and Coordination System of the United Nations and the European Commission, with data from JTWC and NOAA
 - Earth imagery: NASA Earth Observatory, [Blue Marble Next Generation](https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/) by Reto Stöckli and [Black Marble 2016](https://science.nasa.gov/earth/earth-observatory/earth-at-night/maps)
-- Logo, surfer, storm and cyclone markers and mode icons: original artwork by mb26-dev
+- Logo, surfer, shark, storm and cyclone markers and mode icons: original artwork by mb26-dev
+- Shark areas link to the official services listed above; their data stays with them
 - Waves, crests, clouds, rain and cyclone spirals on the globe are drawn by the card itself
 
 See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for details.
