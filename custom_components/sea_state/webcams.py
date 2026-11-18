@@ -54,8 +54,11 @@ def parse_webcams(payload: dict[str, Any], lat: float, lon: float, limit: int = 
     for cam in (payload or {}).get("webcams") or []:
         if cam.get("status") not in (None, "active"):
             continue
-        images = (cam.get("images") or {}).get("current") or {}
+        all_images = cam.get("images") or {}
+        images = all_images.get("current") or {}
         image = images.get("preview") or images.get("thumbnail")
+        day = all_images.get("daylight") or {}
+        daylight = day.get("preview") or day.get("thumbnail")
         if not image:
             continue
         loc = cam.get("location") or {}
@@ -73,6 +76,7 @@ def parse_webcams(payload: dict[str, Any], lat: float, lon: float, limit: int = 
             "distance_km": round(dist, 1) if dist is not None else None,
             "updated": cam.get("lastUpdatedOn"),
             "image": image,
+            "daylight": daylight if daylight and daylight != image else None,
             "link": link,
             "sea": _looks_at_sea(cam),
         })
