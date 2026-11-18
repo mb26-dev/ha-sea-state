@@ -6,6 +6,7 @@ import asyncio
 from collections.abc import Callable
 from datetime import datetime, timezone
 import gzip
+import hashlib
 import json
 import logging
 from pathlib import Path
@@ -48,6 +49,10 @@ from .const import (
 from .cyclones import GDACS_EVENTS_URL, closest_approach, parse_events, parse_track
 from .grid import (
     CHUNK,
+    OCEAN_VARS,
+    SPOT_MARINE_VARS,
+    SPOT_WX_VARS,
+    WX_VARS,
     chunks,
     find_storms,
     frame_index,
@@ -85,6 +90,20 @@ FEEDS = {
     "weather": SOURCE_WEATHER,
     "spots": SOURCE_SPOTS,
     "cyclones": SOURCE_CYCLONES,
+}
+
+
+def _fingerprint(*parts: Any) -> str:
+    """Short hash of the variables a feed asks for, to notice when an update changes them."""
+    return hashlib.sha1(json.dumps(parts, sort_keys=True).encode()).hexdigest()[:12]
+
+
+# When a new version asks Open-Meteo for other variables, cached data of that feed is
+# refreshed right after the start instead of waiting for the next regular update.
+SCHEMAS = {
+    "spots": _fingerprint(SPOT_MARINE_VARS, SPOT_WX_VARS),
+    "ocean": _fingerprint(OCEAN_VARS),
+    "weather": _fingerprint(WX_VARS),
 }
 
 
@@ -184,6 +203,13 @@ class SeaStateData:
             self.weather_packed = cache.get("weather")
             self.spot_raw = cache.get("spots") or {}
             self.cyclones = cache.get("cyclones") or []
+        cached_schemas = (cache or {}).get("schemas") or {}
+        for feed, schema in SCHEMAS.items():
+            if cached_schemas.get(feed) != schema and feed in self.feed_state:
+                # keep showing the old data, but fetch it again now
+                _LOGGER.debug("Sea State Forecast: %s data was cached by another version, refreshing", feed)
+                self.feed_state[feed]["last_ok"] = 0
+                self.feed_state[feed]["retry_after"] = 0
         await self.async_rebuild()
 
     def _cache_file(self) -> Path:
@@ -221,6 +247,7 @@ class SeaStateData:
             "weather": self.weather_packed,
             "spots": self.spot_raw,
             "cyclones": self.cyclones,
+            "schemas": SCHEMAS,
         }
         await self.hass.async_add_executor_job(self._write_cache, blob)
 
