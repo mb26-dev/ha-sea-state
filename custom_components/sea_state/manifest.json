@@ -1,0 +1,14 @@
+{
+  "domain": "sea_state",
+  "name": "Sea State Forecast",
+  "codeowners": ["@mb26-dev"],
+  "config_flow": true,
+  "dependencies": ["frontend", "http"],
+  "documentation": "https://github.com/mb26-dev/ha-sea-state",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/mb26-dev/ha-sea-state/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "0.1.0"
+}
