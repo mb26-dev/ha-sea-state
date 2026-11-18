@@ -69,6 +69,7 @@ from .grid import (
     weather_points,
     weather_url,
 )
+from .sharks import shark_info
 from .spots import REGIONS, builtin_spots, parse_custom_spots
 from .surf import evaluate_spot, nearest_spot
 
@@ -673,6 +674,7 @@ def _card_spot(spot: dict[str, Any], ev: dict[str, Any] | None) -> dict[str, Any
         "offshore_from": spot["offshore_from"],
         "size": [spot["size_min"], spot["size_ideal"], spot["size_max"]],
         "custom": spot.get("custom", False),
+        "sharks": shark_info(spot["id"]),
     }
     if ev:
         out.update({

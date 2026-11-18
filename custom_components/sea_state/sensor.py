@@ -15,6 +15,7 @@ from .const import CONF_FIRING, CONF_WATCHED, DEFAULT_FIRING, DEFAULT_WATCHED, D
 from .coordinator import SeaStateCoordinator
 from .cyclones import CATEGORY_LABELS
 from .entity import SeaStateEntity
+from .sharks import shark_info
 from .surf import CONDITIONS, DOUGLAS_LABELS
 
 MAX_LIST = 25
@@ -32,6 +33,14 @@ def _spot_attrs(spot: dict[str, Any], ev: dict[str, Any] | None) -> dict[str, An
         "swell_window_from": spot["swell_from"],
         "offshore_wind_from": spot["offshore_from"],
     }
+    sharks = shark_info(spot["id"])
+    if sharks:
+        attrs["shark_species"] = sharks["species"]
+        if sharks["measures"]:
+            attrs["shark_measures"] = sharks["measures"]
+        if sharks["service"]:
+            attrs["shark_service"] = sharks["service"]["name"]
+            attrs["shark_service_url"] = sharks["service"]["url"]
     if not ev:
         return attrs
     now = ev["now"]
