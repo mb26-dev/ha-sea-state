@@ -4,7 +4,7 @@ from __future__ import annotations
 
 DOMAIN = "sea_state"
 NAME = "Sea State Forecast"
-VERSION = "0.1.0b6"
+VERSION = "0.1.0b7"
 
 CONF_SOURCES = "sources"
 CONF_HOME_SPOT = "home_spot"
@@ -13,6 +13,7 @@ CONF_CUSTOM_SPOTS = "custom_spots"
 CONF_FIRING = "firing_rating"
 CONF_CYCLONE_RADIUS = "cyclone_radius_km"
 CONF_GRID_HOURS = "grid_hours"
+CONF_WINDY_KEY = "windy_api_key"
 
 SOURCE_OCEAN = "ocean"
 SOURCE_WEATHER = "weather"
@@ -67,5 +68,6 @@ CACHE_DIR = "sea_state"
 URL_DATA = "/api/sea_state/data"
 URL_GRID = "/api/sea_state/grid"
 URL_EARTH = "/api/sea_state/earth/{kind}"
+URL_WEBCAMS = "/api/sea_state/webcams/{spot_id}"
 URL_FRONTEND = "/sea_state/frontend"
 CARD_FILE = "sea-state-card.js"

@@ -24,6 +24,7 @@ from .const import (
     CONF_GRID_HOURS,
     CONF_HOME_SPOT,
     CONF_SOURCES,
+    CONF_WINDY_KEY,
     DEFAULT_CUSTOM_SPOTS,
     DEFAULT_CYCLONE_RADIUS,
     DEFAULT_FIRING,
@@ -35,10 +36,13 @@ from .const import (
     URL_EARTH,
     URL_FRONTEND,
     URL_GRID,
+    URL_WEBCAMS,
     VERSION,
 )
 from .coordinator import SeaStateCoordinator
 from .data import SeaStateData
+from .webcams import WebcamClient, WebcamError
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -58,6 +62,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.http.register_view(SeaStateDataView())
     hass.http.register_view(SeaStateGridView())
     hass.http.register_view(SeaStateEarthView())
+    hass.http.register_view(SeaStateWebcamsView())
     return True
 
 
@@ -73,10 +78,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         options.get(CONF_CYCLONE_RADIUS, DEFAULT_CYCLONE_RADIUS),
         int(options.get(CONF_GRID_HOURS, DEFAULT_GRID_HOURS)),
     )
+    key = (options.get(CONF_WINDY_KEY) or "").strip()
+    data.webcams_enabled = bool(key)
     await data.async_load()
 
     coordinator = SeaStateCoordinator(hass, entry, data)
     hass.data[DOMAIN]["data"] = data
+    hass.data[DOMAIN]["webcams"] = WebcamClient(async_get_clientsession(hass), key) if key else None
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
     # start with the cached data, the downloads run in the background so startup is never blocked
@@ -98,6 +106,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
         hass.data[DOMAIN].pop(entry.entry_id, None)
+        hass.data[DOMAIN].pop("webcams", None)
         data: SeaStateData | None = hass.data[DOMAIN].pop("data", None)
         if data:
             await data.async_shutdown()
@@ -162,3 +171,29 @@ class SeaStateEarthView(HomeAssistantView):
         if path is None:
             return web.json_response({"error": "Earth image not downloaded yet"}, status=503)
         return web.FileResponse(path, headers={"Cache-Control": "private, max-age=86400"})
+
+
+class SeaStateWebcamsView(HomeAssistantView):
+    """Live webcams near a spot, from the Windy Webcams API (only with the user's own key)."""
+
+    url = URL_WEBCAMS
+    name = "api:sea_state:webcams"
+    requires_auth = True
+
+    async def get(self, request: web.Request, spot_id: str) -> web.Response:
+        hass: HomeAssistant = request.app[KEY_HASS]
+        data: SeaStateData | None = hass.data.get(DOMAIN, {}).get("data")
+        client: WebcamClient | None = hass.data.get(DOMAIN, {}).get("webcams")
+        if data is None:
+            return web.json_response({"error": "Sea State Forecast is not configured"}, status=404)
+        if client is None:
+            return web.json_response({"error": "disabled"}, status=404)
+        spot = data.spot_by_id.get(spot_id)
+        if spot is None:
+            return web.json_response({"error": "unknown spot"}, status=404)
+        try:
+            cams = await client.async_near(spot_id, spot["lat"], spot["lon"])
+        except WebcamError as err:
+            _LOGGER.debug("Windy webcams for %s failed: %s", spot_id, err.reason)
+            return web.json_response({"error": err.reason}, status=502)
+        return web.json_response({"webcams": cams}, headers={"Cache-Control": "no-store"})

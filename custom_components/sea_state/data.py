@@ -140,6 +140,7 @@ class SeaStateData:
             _LOGGER.warning("Sea State Forecast: these custom spot lines could not be read: %s", bad)
         self.spots: list[dict[str, Any]] = builtin_spots() + custom
         self.spot_by_id = {s["id"]: s for s in self.spots}
+        self.webcams_enabled = False
         self._store: Store = Store(hass, STORAGE_VERSION, STORAGE_KEY)
         self.cache_dir = Path(hass.config.path(".storage", CACHE_DIR))
         self._lock = asyncio.Lock()
@@ -522,6 +523,7 @@ class SeaStateData:
             "grid_version": self.grid_version,
             "grid_updated": self.grid_updated,
             "sources": self.source_status(),
+            "webcams": self.webcams_enabled,
             "regions": REGIONS,
             "spots": [_card_spot(s, evals.get(s["id"])) for s in self.spots],
             "cyclones": cyclones,

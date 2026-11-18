@@ -18,7 +18,9 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
     TextSelector,
     TextSelectorConfig,
+    TextSelectorType,
 )
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
     CONF_CUSTOM_SPOTS,
@@ -28,6 +30,7 @@ from .const import (
     CONF_HOME_SPOT,
     CONF_SOURCES,
     CONF_WATCHED,
+    CONF_WINDY_KEY,
     DEFAULT_CUSTOM_SPOTS,
     DEFAULT_CYCLONE_RADIUS,
     DEFAULT_FIRING,
@@ -43,6 +46,7 @@ from .const import (
     SOURCES,
 )
 from .spots import builtin_spots, parse_custom_spots
+from .webcams import WebcamClient, WebcamError
 
 
 def _spot_options(custom_text: str | None) -> list[SelectOptionDict]:
@@ -90,6 +94,9 @@ def _schema(defaults: dict[str, Any]) -> vol.Schema:
                 )
             ),
             vol.Optional(CONF_CUSTOM_SPOTS, default=custom_text): TextSelector(TextSelectorConfig(multiline=True)),
+            vol.Optional(CONF_WINDY_KEY, default=defaults.get(CONF_WINDY_KEY, "")): TextSelector(
+                TextSelectorConfig(type=TextSelectorType.PASSWORD)
+            ),
         }
     )
 
@@ -104,6 +111,18 @@ def _validate(user_input: dict[str, Any]) -> dict[str, str]:
     return errors
 
 
+async def _validate_key(hass, user_input: dict[str, Any], errors: dict[str, str]) -> None:
+    """Check the optional Windy webcams key once, so a typo shows up in the form."""
+    key = (user_input.get(CONF_WINDY_KEY) or "").strip()
+    user_input[CONF_WINDY_KEY] = key
+    if not key or errors:
+        return
+    try:
+        await WebcamClient(async_get_clientsession(hass), key).async_check_key()
+    except WebcamError as err:
+        errors[CONF_WINDY_KEY] = "bad_windy_key" if err.reason == "invalid_key" else "windy_unreachable"
+
+
 class SeaStateConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle the initial setup."""
 
@@ -115,6 +134,7 @@ class SeaStateConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         if user_input is not None:
             errors = _validate(user_input)
+            await _validate_key(self.hass, user_input, errors)
             if not errors:
                 return self.async_create_entry(title=NAME, data=user_input)
         return self.async_show_form(step_id="user", data_schema=_schema(user_input or {}), errors=errors)
@@ -132,6 +152,7 @@ class SeaStateOptionsFlow(OptionsFlow):
         errors: dict[str, str] = {}
         if user_input is not None:
             errors = _validate(user_input)
+            await _validate_key(self.hass, user_input, errors)
             if not errors:
                 return self.async_create_entry(data=user_input)
         current = {**self.config_entry.data, **self.config_entry.options}
