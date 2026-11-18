@@ -22,6 +22,18 @@ One integration for two kinds of people: **weather and ocean watchers**, who wan
 
 No API key, no account.
 
+<p align="center">
+  <img src="docs/images/overview.jpg" alt="Sea State Forecast card in All mode: wave heights, rolling crests, clouds and tropical cyclone AKVAN-26 in the Bay of Bengal" width="100%">
+</p>
+
+## Screenshots
+
+| Surf mode with a tropical cyclone | Tap a spot for the full forecast |
+| --- | --- |
+| <img src="docs/images/surf-cyclone.jpg" alt="Surf mode over the Indian Ocean with surfer markers, Kata Beach rated good and cyclone AKVAN-26 with its forecast track"> | <img src="docs/images/spot-details.jpg" alt="Spot details for Kata Beach: rating, surf height, swell, wind, water temperature, tides, 48 hour chart and 7 day outlook"> |
+| **Ocean & weather: Southern Ocean gales** | |
+| <img src="docs/images/ocean-weather.jpg" alt="Ocean and weather mode over the South Pacific: wave heights up to 6 m, clouds and two gale areas with wind and pressure"> | Wave heights as colours, crests rolling with the swell, clouds drifting with the wind and gale areas with wind speed and pressure. Antarctica in the south, South America on the night side with its city lights. |
+
 ## Features
 
 **Lovelace card** `custom:sea-state-card` (installed and registered automatically)
@@ -198,6 +210,7 @@ A star on GitHub, a bug report or a screenshot of your dashboard helps just as m
 - Waves, swell, sea surface temperature, sea level, wind, clouds, rain and pressure: [Open-Meteo](https://open-meteo.com) (CC BY 4.0), with the marine models of ECMWF, Météo-France, DWD and NOAA that Open-Meteo combines
 - Tropical cyclones: [GDACS](https://www.gdacs.org), the Global Disaster Alert and Coordination System of the United Nations and the European Commission, with data from JTWC and NOAA
 - Earth imagery: NASA Earth Observatory, [Blue Marble Next Generation](https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/) by Reto Stöckli and [Black Marble 2016](https://science.nasa.gov/earth/earth-observatory/earth-at-night/maps)
-- Surfers, waves, clouds and cyclones are original artwork drawn in the card
+- Logo, surfer, storm and cyclone markers and mode icons: original artwork by mb26-dev
+- Waves, crests, clouds, rain and cyclone spirals on the globe are drawn by the card itself
 
 See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for details.
