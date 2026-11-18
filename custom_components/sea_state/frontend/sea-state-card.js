@@ -3,7 +3,7 @@
  * https://github.com/mb26-dev/ha-sea-state
  */
 
-import { DEG, ecef, viewFrame, sunDirection, loadEarth, renderEarth, upsampleGrid, waveColor, WAVE_STOPS } from "./sea-state-earth.js?v=0.1.0b6";
+import { DEG, ecef, viewFrame, sunDirection, loadEarth, renderEarth, upsampleGrid, waveColor, WAVE_STOPS } from "./sea-state-earth.js?v=0.1.0b7";
 import {
   CONDITION_COLORS,
   CONDITION_LABELS,
@@ -13,9 +13,9 @@ import {
   cloudSprite,
   drawLightning,
   drawCyclone,
-} from "./sea-state-art.js?v=0.1.0b6";
+} from "./sea-state-art.js?v=0.1.0b7";
 
-const VERSION = "0.1.0b6";
+const VERSION = "0.1.0b7";
 
 // animated SVG markers, shown as <img> above the globe so their own animations run
 const ICON_BASE = new URL("./icons/", import.meta.url);
@@ -133,6 +133,18 @@ const ICONS = {
 
 function svg(path) {
   return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg>`;
+}
+
+const CAM_COURTESY = `<div class="by muted">Webcams provided by <a href="https://www.windy.com/" target="_blank" rel="noopener">windy.com</a> &mdash; <a href="https://www.windy.com/webcams/add" target="_blank" rel="noopener">add a webcam</a></div>`;
+
+/** "12 min ago" style age of an image */
+function ageText(ms) {
+  if (!Number.isFinite(ms)) return "";
+  const min = Math.max(0, Math.round((Date.now() - ms) / 60000));
+  if (min < 1) return "just now";
+  if (min < 60) return `${min} min ago`;
+  const h = Math.round(min / 60);
+  return h < 48 ? `${h} h ago` : `${Math.round(h / 24)} days ago`;
 }
 
 function esc(value) {
@@ -397,6 +409,16 @@ const STYLE = `
   .sharkbox .t { font-weight: 650; font-size: 12.5px; margin-bottom: 1px; }
   .sharkbox a { color: #6fdcf0; text-decoration: none; font-weight: 600; }
   .sharkbox a:hover { text-decoration: underline; }
+  .cams { margin: 9px 0 4px; }
+  .cams .ct { font-weight: 650; font-size: 12.5px; margin-bottom: 5px; }
+  .cams .cl { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  .cams .cl::-webkit-scrollbar { display: none; }
+  .cams a.cam { flex: 0 0 auto; width: 150px; color: inherit; text-decoration: none; border-radius: 8px; overflow: hidden; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); }
+  .cams a.cam img { display: block; width: 150px; height: auto; max-width: 100%; }
+  .cams a.cam .cn { padding: 3px 6px 4px; font-size: 11px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cams a.cam:hover { border-color: #6fdcf0; }
+  .cams .by { font-size: 10.5px; margin-top: 4px; text-align: right; }
+  .cams .by a { color: #6fdcf0; text-decoration: none; }
   .legend .shk { width: 14px; height: 14px; margin: -3px 3px -3px 0; vertical-align: middle; }
   .links { margin-top: 9px; display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12px; }
   .links a { color: #6fdcf0; text-decoration: none; }
@@ -436,6 +458,7 @@ class SeaStateCard extends HTMLElement {
       cyclones: true,
       spots: true,
       sharks: true,
+      webcams: true,
       forecast: true,
       lighting: "day",
       units: "auto",
@@ -1646,6 +1669,8 @@ class SeaStateCard extends HTMLElement {
       parts.push(`<div class="line"><span class="ic">⏭</span><span class="tx">Next good session ${d.toLocaleString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC" })} local</span></div>`);
     }
     if (s.sharks && this._config.sharks !== false) parts.push(this._sharkHtml(s.sharks));
+    const cams = this._camsOn();
+    if (cams) parts.push(`<div class="cams" data-spot="${esc(s.id)}">${this._camsHtml(s.id)}</div>`);
     parts.push(this._chartSvg(s));
     if (s.days && s.days.length) {
       const rows = s.days.map((d) => {
@@ -1663,6 +1688,47 @@ class SeaStateCard extends HTMLElement {
     ];
     parts.push(`<div class="links">${links.join("")}</div>`);
     this._infoShell(s.name, where, parts.join(""));
+    if (cams) this._loadCams(s.id);
+  }
+
+  // ------------------------------------------------------------------ webcams (Windy, optional)
+
+  _camsOn() {
+    return this._config.webcams !== false && !!this._data?.webcams;
+  }
+
+  /** cached list of a spot, null while it still has to be fetched */
+  _camsHtml(id) {
+    const hit = this._cams?.[id];
+    if (!hit) return `<div class="ct">Webcams nearby</div><div class="muted">loading...</div>`;
+    if (hit.error) return hit.error === "disabled" ? "" : `<div class="ct">Webcams nearby</div><div class="muted">Webcams not available right now.</div>`;
+    if (!hit.list.length) return `<div class="ct">Webcams nearby</div><div class="muted">No webcam within 15 km.</div>${CAM_COURTESY}`;
+    const cards = hit.list.map((c) => {
+      const age = c.updated ? ageText(Date.parse(c.updated)) : "";
+      const meta = [c.distance_km != null ? this._dist(c.distance_km) : "", age].filter(Boolean).join(" · ");
+      return `<a class="cam" href="${esc(c.link)}" target="_blank" rel="noopener" title="${esc(c.title)}"><img src="${esc(c.image)}" alt="${esc(c.title)}" loading="lazy"><div class="cn">${esc(c.title)}<div class="muted">${esc(meta)}</div></div></a>`;
+    });
+    return `<div class="ct">Webcams nearby</div><div class="cl">${cards.join("")}</div>${CAM_COURTESY}`;
+  }
+
+  async _loadCams(id) {
+    this._cams = this._cams || {};
+    const hit = this._cams[id];
+    // image links of the free Windy tier expire after 10 minutes, the backend caches 8
+    if (hit && Date.now() - hit.t < (hit.error ? 60000 : 5 * 60000)) return;
+    if (this._camsBusy?.[id]) return;
+    this._camsBusy = { ...(this._camsBusy || {}), [id]: true };
+    try {
+      const resp = await this._hass.fetchWithAuth(`/api/sea_state/webcams/${encodeURIComponent(id)}`);
+      const body = await resp.json().catch(() => ({}));
+      this._cams[id] = resp.ok ? { t: Date.now(), list: body.webcams || [] } : { t: Date.now(), error: body.error || `HTTP ${resp.status}` };
+    } catch (err) {
+      this._cams[id] = { t: Date.now(), error: "unreachable" };
+    } finally {
+      delete this._camsBusy[id];
+    }
+    const box = this._info.querySelector(`.cams[data-spot="${CSS.escape(id)}"]`);
+    if (box) box.innerHTML = this._camsHtml(id);
   }
 
   _pointInfo(ll) {
@@ -2442,6 +2508,7 @@ const EDITOR_SCHEMA = [
       { name: "cyclones", selector: { boolean: {} } },
       { name: "spots", selector: { boolean: {} } },
       { name: "sharks", selector: { boolean: {} } },
+      { name: "webcams", selector: { boolean: {} } },
       { name: "labels", selector: { boolean: {} } },
       { name: "regions", selector: { boolean: {} } },
       { name: "forecast", selector: { boolean: {} } },
@@ -2465,6 +2532,7 @@ const EDITOR_LABELS = {
   cyclones: "Tropical cyclones",
   spots: "Surf spots",
   sharks: "Shark areas",
+  webcams: "Webcams (needs a Windy key in the integration)",
   labels: "Spot names",
   regions: "Region buttons",
   forecast: "Forecast button (48 h)",
@@ -2509,6 +2577,7 @@ class SeaStateCardEditor extends HTMLElement {
       cyclones: true,
       spots: true,
       sharks: true,
+      webcams: true,
       labels: true,
       regions: true,
       forecast: true,
