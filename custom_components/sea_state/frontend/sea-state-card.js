@@ -3,7 +3,7 @@
  * https://github.com/mb26-dev/ha-sea-state
  */
 
-import { DEG, ecef, viewFrame, sunDirection, loadEarth, renderEarth, upsampleGrid, waveColor, WAVE_STOPS } from "./sea-state-earth.js?v=0.1.0b7";
+import { DEG, ecef, viewFrame, sunDirection, loadEarth, renderEarth, upsampleGrid, waveColor, WAVE_STOPS } from "./sea-state-earth.js?v=0.1.0b8";
 import {
   CONDITION_COLORS,
   CONDITION_LABELS,
@@ -13,9 +13,9 @@ import {
   cloudSprite,
   drawLightning,
   drawCyclone,
-} from "./sea-state-art.js?v=0.1.0b7";
+} from "./sea-state-art.js?v=0.1.0b8";
 
-const VERSION = "0.1.0b7";
+const VERSION = "0.1.0b8";
 
 // animated SVG markers, shown as <img> above the globe so their own animations run
 const ICON_BASE = new URL("./icons/", import.meta.url);
@@ -2623,4 +2623,397 @@ if (!customElements.get("sea-state-card")) {
     documentationURL: "https://github.com/mb26-dev/ha-sea-state",
   });
   console.info(`%c SEA STATE %c ${VERSION} `, "background:#1aa6c4;color:#02121a;font-weight:700", "background:#0b1a24;color:#4fd3e8");
+}
+
+// ====================================================================== compact spot card
+
+/** data of the integration, shared by all spot cards on a page */
+const SPOT_DATA = { at: 0, data: null, busy: null };
+
+async function loadSpotData(hass, force = false) {
+  if (!force && SPOT_DATA.data && Date.now() - SPOT_DATA.at < DATA_REFRESH_MS - 5000) return SPOT_DATA.data;
+  if (SPOT_DATA.busy) return SPOT_DATA.busy;
+  SPOT_DATA.busy = (async () => {
+    try {
+      const resp = await hass.fetchWithAuth("/api/sea_state/data");
+      if (resp.status === 503) throw new Error("loading");
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      SPOT_DATA.data = await resp.json();
+      SPOT_DATA.at = Date.now();
+      return SPOT_DATA.data;
+    } finally {
+      SPOT_DATA.busy = null;
+    }
+  })();
+  return SPOT_DATA.busy;
+}
+
+const SPOT_SHOW = ["surf", "swell", "wind", "water", "sea_state", "tide", "chart", "next_good", "sharks", "cyclone", "webcams"];
+
+const SPOT_STYLE = `
+  :host { display: block; }
+  ha-card { display: block; overflow: hidden; border-radius: var(--ha-card-border-radius, 12px); color: #eef6fb;
+    background: radial-gradient(120% 90% at 0% 0%, #0d2a3a 0%, #071622 45%, #02060c 100%);
+    font-family: var(--paper-font-body1_-_font-family, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif); }
+  .wrap { padding: 12px 14px 10px; font-size: 12.5px; line-height: 1.45; }
+  .brand { display: flex; align-items: baseline; gap: 6px; font-size: 13px; font-weight: 650; letter-spacing: .4px; margin-bottom: 8px; }
+  .brand span { color: #4fd3e8; }
+  .brand .sub { margin-left: auto; font-size: 10.5px; font-weight: 400; letter-spacing: 0; opacity: .6; }
+  .top { display: flex; gap: 11px; align-items: center; cursor: default; }
+  .top.nav { cursor: pointer; }
+  .top img { width: 58px; height: 58px; flex: 0 0 58px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
+  .top .ph { width: 58px; height: 58px; flex: 0 0 58px; border-radius: 50%; border: 3px solid currentColor; box-sizing: border-box; }
+  .top .nm { min-width: 0; flex: 1 1 auto; }
+  .top h3 { margin: 0; font-size: 16px; font-weight: 650; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .top .where { opacity: .7; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .top .rt { display: flex; align-items: center; gap: 6px; margin-top: 3px; flex-wrap: wrap; }
+  .badge { font-size: 10.5px; font-weight: 650; letter-spacing: .4px; padding: 2px 8px; border-radius: 10px; color: #0b1118; white-space: nowrap; }
+  .badge.soft { background: rgba(255,255,255,.1); color: #e8f1f6; font-weight: 500; letter-spacing: 0; }
+  .stars { color: #ffcf3a; font-size: 14px; letter-spacing: 1px; white-space: nowrap; }
+  .stars .off { color: rgba(255,255,255,.22); }
+  .stars .half { background: linear-gradient(90deg, #ffcf3a 50%, rgba(255,255,255,.22) 50%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .surf { display: flex; gap: 10px; align-items: center; margin: 10px 0 4px; }
+  .surf .big { font-size: 26px; font-weight: 700; line-height: 1.05; }
+  .surf .big small { font-size: 12px; font-weight: 500; opacity: .75; margin-left: 3px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px; margin-top: 8px; }
+  .tile { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 6px 8px; min-width: 0; }
+  .tile .k { font-size: 10.5px; opacity: .65; text-transform: uppercase; letter-spacing: .5px; }
+  .tile .v { font-size: 14px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tile .s { font-size: 11px; opacity: .7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .muted { opacity: .65; font-size: 11px; }
+  .chart { margin: 10px 0 2px; }
+  .chart svg { width: 100%; height: 64px; display: block; }
+  .days { margin-top: 8px; display: grid; grid-template-columns: auto auto minmax(0,1fr) auto; gap: 3px 8px; font-size: 11.5px; align-items: center; }
+  .days .d { opacity: .8; white-space: nowrap; }
+  .days .s .stars { font-size: 12px; }
+  .days .w { opacity: .7; white-space: nowrap; text-align: right; }
+  .note { margin-top: 8px; padding: 6px 9px; border-radius: 10px; display: flex; gap: 8px; align-items: center; font-size: 12px; }
+  .note img { width: 26px; height: 26px; flex: 0 0 26px; }
+  .note.next { background: rgba(63,212,124,.09); border: 1px solid rgba(63,212,124,.3); }
+  .note.shark { background: rgba(239,68,68,.09); border: 1px solid rgba(239,68,68,.32); }
+  .note.cyc { background: rgba(255,176,58,.1); border: 1px solid rgba(255,176,58,.4); }
+  .note a { color: #6fdcf0; text-decoration: none; font-weight: 600; }
+  .cams { margin: 10px 0 2px; }
+  .cams .ct { font-weight: 650; font-size: 12px; margin-bottom: 5px; }
+  .cams .cl { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  .cams .cl::-webkit-scrollbar { display: none; }
+  .cams a.cam { flex: 1 0 128px; max-width: 200px; color: inherit; text-decoration: none; border-radius: 8px; overflow: hidden; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); }
+  .cams a.cam img { display: block; width: 100%; max-width: 200px; height: auto; }
+  .cams a.cam .cn { padding: 3px 6px 4px; font-size: 11px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cams .by { font-size: 10.5px; margin-top: 4px; text-align: right; }
+  .cams .by a { color: #6fdcf0; text-decoration: none; }
+  .list { display: flex; flex-direction: column; gap: 4px; }
+  .row { display: grid; grid-template-columns: 34px minmax(0,1fr) auto auto; gap: 8px; align-items: center; padding: 4px 6px; border-radius: 10px; background: rgba(255,255,255,.04); }
+  .row.nav { cursor: pointer; }
+  .row img, .row .ph { width: 34px; height: 34px; }
+  .row .ph { border-radius: 50%; border: 2px solid currentColor; box-sizing: border-box; }
+  .row .n { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .n .muted { display: block; font-weight: 400; }
+  .row .m { text-align: right; font-weight: 650; white-space: nowrap; }
+  .row .m .muted { display: block; font-weight: 400; }
+  .row .stars { font-size: 12px; }
+  .msg { opacity: .75; padding: 6px 0; }
+`;
+
+class SeaStateSpotCard extends HTMLElement {
+  constructor() {
+    super();
+    this._offsetH = 0;
+    this._cams = {};
+    this._root = this.attachShadow({ mode: "open" });
+    this._root.innerHTML = `<style>${SPOT_STYLE}</style><ha-card><div class="wrap"><div class="msg">Loading Sea State...</div></div></ha-card>`;
+    this._wrap = this._root.querySelector(".wrap");
+    this._info = this._root; // used by the shared webcam loader
+  }
+
+  static getConfigElement() {
+    return document.createElement("sea-state-spot-card-editor");
+  }
+
+  static getStubConfig() {
+    return { spot: "home" };
+  }
+
+  setConfig(config) {
+    if (!config) throw new Error("Invalid configuration");
+    if (config.spots != null && !Array.isArray(config.spots)) throw new Error("spots must be a list of spot ids");
+    this._config = { spot: "home", days: 3, ...config };
+    if (this._hass) this._render();
+  }
+
+  set hass(hass) {
+    const first = !this._hass;
+    this._hass = hass;
+    if (first) this._load();
+  }
+
+  connectedCallback() {
+    if (this._hass && !this._timer) this._load();
+  }
+
+  disconnectedCallback() {
+    clearTimeout(this._timer);
+    this._timer = null;
+  }
+
+  getCardSize() {
+    return this._config?.spots?.length ? 1 + this._config.spots.length : 5;
+  }
+
+  getGridOptions() {
+    return { columns: 6, min_columns: 4 };
+  }
+
+  async _load() {
+    clearTimeout(this._timer);
+    let wait = DATA_REFRESH_MS;
+    try {
+      this._data = await loadSpotData(this._hass);
+      await loadIcons();
+      this._render();
+    } catch (err) {
+      wait = 30000;
+      if (!this._data) this._wrap.innerHTML = `<div class="msg">${err.message === "loading" ? "Sea State is loading the first forecasts..." : `Sea State data not available (${esc(err.message)}). Is the Sea State Forecast integration set up?`}</div>`;
+    }
+    this._timer = setTimeout(() => this._load(), wait);
+  }
+
+  _show(key) {
+    const show = this._config.show;
+    if (Array.isArray(show)) return show.includes(key);
+    return this._config[key] !== false;
+  }
+
+  _findSpot(id) {
+    const spots = this._data?.spots || [];
+    if (!id || id === "home") id = this._data?.home_spot;
+    return spots.find((s) => s.id === id) || null;
+  }
+
+  _icon(now, cls = "") {
+    if (!now) return `<span class="ph ${cls}" style="color:#6d7f8c"></span>`;
+    const kind = POSE_ICON[now.pose] || "riding";
+    const color = CONDITION_COLORS[now.condition] || "#9ab";
+    const url = iconUrl(kind, OWN_RING.has(kind) ? null : color);
+    return url ? `<img class="${cls}" src="${url}" alt="">` : `<span class="ph ${cls}" style="color:${color}"></span>`;
+  }
+
+  _navigate() {
+    const path = this._config.navigation_path;
+    if (!path) return;
+    history.pushState(null, "", path);
+    window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
+  }
+
+  _render() {
+    if (!this._data) return;
+    this._spots = this._data.spots || [];
+    const brand = this._config.title === false ? "" : `<div class="brand">${this._config.title ? esc(this._config.title) : "Sea <span>State</span>"}<span class="sub">${esc(rel((this._data.updated || 0) * 1000))}</span></div>`;
+    if (Array.isArray(this._config.spots) && this._config.spots.length) {
+      this._wrap.innerHTML = brand + this._listHtml();
+      for (const row of this._wrap.querySelectorAll(".row.nav")) row.addEventListener("click", () => this._navigate());
+      return;
+    }
+    const s = this._findSpot(this._config.spot);
+    if (!s) {
+      this._wrap.innerHTML = `${brand}<div class="msg">Spot "${esc(this._config.spot)}" not found. Pick one in the card editor.</div>`;
+      return;
+    }
+    this._wrap.innerHTML = brand + this._spotHtml(s);
+    if (this._config.navigation_path) this._wrap.querySelector(".top").addEventListener("click", () => this._navigate());
+    if (this._show("webcams") && this._camsOn()) this._loadCams(s.id);
+  }
+
+  _listHtml() {
+    const rows = this._config.spots
+      .map((id) => this._findSpot(id))
+      .filter(Boolean)
+      .map((s) => {
+        const now = s.now;
+        const where = [s.area, s.country].filter(Boolean).join(", ");
+        const wind = now?.wind_kind ? WIND_KINDS[now.wind_kind] || "" : "";
+        return `<div class="row${this._config.navigation_path ? " nav" : ""}">${this._icon(now)}<div class="n">${esc(s.name)}<span class="muted">${esc(where)}</span></div>`
+          + `<div>${now ? starsHtml(now.rating) : ""}</div>`
+          + `<div class="m">${now ? this._len(now.surf_m) : "–"}<span class="muted">${esc(wind)}</span></div></div>`;
+      });
+    return rows.length ? `<div class="list">${rows.join("")}</div>` : `<div class="msg">None of the spots was found. Pick them in the card editor.</div>`;
+  }
+
+  _spotHtml(s) {
+    const now = s.now;
+    const where = [s.area, s.country].filter(Boolean).join(", ");
+    const parts = [];
+    const cond = now ? now.condition : null;
+    const color = cond ? CONDITION_COLORS[cond] || "#9ab" : "#6d7f8c";
+    parts.push(`<div class="top${this._config.navigation_path ? " nav" : ""}">${this._icon(now)}<div class="nm"><h3>${esc(this._config.name || s.name)}</h3><div class="where">${esc(where)}</div>`
+      + (now ? `<div class="rt"><span class="badge" style="background:${color}">${esc((CONDITION_LABELS[cond] || cond).toUpperCase())}</span>${starsHtml(now.rating)}<span class="badge soft">${now.rating.toFixed(1)} / 5</span></div>` : "")
+      + `</div></div>`);
+    if (!now) {
+      parts.push(`<div class="msg">No forecast for this spot yet.</div>`);
+      return parts.join("");
+    }
+    if (this._show("surf")) {
+      parts.push(`<div class="surf">${this._compassSvg(s, now)}<div><div class="big">${this._len(now.surf_m)}<small>surf</small></div><div class="muted">ideal ${this._lenRange(s.size[0], s.size[2])} · ${esc(BREAKS[s.kind] || s.kind)}</div></div></div>`);
+    }
+    const tiles = [];
+    const tile = (k, v, sub) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div>${sub ? `<div class="s">${sub}</div>` : ""}</div>`;
+    if (this._show("swell") && now.swell_m != null) {
+      tiles.push(tile("Swell", `${this._len(now.swell_m)} · ${now.swell_period != null ? `${Math.round(now.swell_period)} s` : "–"}`, `from ${compass(now.swell_dir)}${now.swell2_m ? ` · 2nd ${this._len(now.swell2_m)}` : ""}`));
+    }
+    if (this._show("wind") && now.wind_kmh != null) {
+      const wc = now.wind_kind === "offshore" || now.wind_kind === "glassy" ? "#3fd47c" : now.wind_kind === "onshore" ? "#ff7a5c" : "#ffcf3a";
+      tiles.push(tile("Wind", `${this._speed(now.wind_kmh)} ${compass(now.wind_dir)}`, `<span style="color:${wc};font-weight:650">${esc(WIND_KINDS[now.wind_kind] || "")}</span>${now.gust_kmh ? ` · gusts ${this._speed(now.gust_kmh)}` : ""}`));
+    }
+    if (this._show("water") && now.water_c != null) tiles.push(tile("Water", this._temp(now.water_c), esc(now.wetsuit || "")));
+    if (this._show("tide")) {
+      const ts = Date.now() / 1000;
+      const next = (s.tides || []).filter((t) => t.time > ts).slice(0, 2);
+      if (next.length) {
+        const fmt = (t) => new Date(t.time * 1000 + (s.utc_offset || 0) * 1000).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
+        tiles.push(tile("Tide", `${next[0].kind === "high" ? "High" : "Low"} ${fmt(next[0])}`, next[1] ? `then ${next[1].kind === "high" ? "high" : "low"} ${fmt(next[1])}` : "local time"));
+      }
+    }
+    if (this._show("sea_state") && now.sea_state) {
+      tiles.push(tile("Sea", esc(SEA_STATE_NAMES[now.sea_state] || now.sea_state), `Douglas ${now.douglas} · waves ${this._len(now.wave_height_m)}`));
+    }
+    if (tiles.length) parts.push(`<div class="tiles">${tiles.join("")}</div>`);
+    if (this._show("chart")) parts.push(this._chartSvg(s));
+    const days = Number(this._config.days);
+    if (days > 0 && s.days && s.days.length) {
+      const rows = s.days.slice(0, days).map((d) => {
+        const dt = new Date(`${d.date}T12:00:00Z`);
+        const label = dt.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", timeZone: "UTC" });
+        return `<span class="d">${esc(label)}</span><span class="s">${starsHtml(d.rating)}</span><span>${this._lenRange(d.surf_min, d.surf_max)}</span><span class="w">${esc(d.best_from)}–${esc(d.best_to)}</span>`;
+      });
+      parts.push(`<div class="days">${rows.join("")}</div>`);
+    }
+    if (this._show("next_good") && s.next_good && now.rating < 3) {
+      const d = new Date(new Date(s.next_good).getTime() + (s.utc_offset || 0) * 1000);
+      parts.push(`<div class="note next">⏭ <span>Next good session <b>${d.toLocaleString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC" })}</b> local</span></div>`);
+    }
+    if (this._show("cyclone")) {
+      const radius = this._data.cyclone_radius_km || 800;
+      const near = (this._data.cyclones || []).filter((c) => (c.closest_km ?? c.now_km ?? 1e9) <= radius);
+      for (const c of near.slice(0, 2)) {
+        const cyc = iconUrl("cyclone", CATEGORY_COLORS[Math.max(0, Math.min(5, c.category || 0))]);
+        parts.push(`<div class="note cyc">${cyc ? `<img src="${cyc}" alt="">` : "🌀"}<span><b>${esc(c.name || "Tropical cyclone")}</b> ${c.now_km != null ? `${this._dist(c.now_km)} from home` : ""}${c.closest_km != null && c.closest_km < (c.now_km ?? 1e9) ? `<span class="muted"> · forecast closest ${this._dist(c.closest_km)}</span>` : ""}</span></div>`);
+      }
+    }
+    if (this._show("sharks") && s.sharks) {
+      const sh = s.sharks;
+      const icon = iconUrl("shark", null);
+      parts.push(`<div class="note shark">${icon ? `<img src="${icon}" alt="">` : "🦈"}<span>Shark area · ${esc(sh.species)}${sh.service ? ` · <a href="${esc(sh.service.url)}" target="_blank" rel="noopener">${esc(sh.service.name)}</a>` : ""}</span></div>`);
+    }
+    if (this._show("webcams") && this._camsOn()) parts.push(`<div class="cams" data-spot="${esc(s.id)}">${this._camsHtml(s.id)}</div>`);
+    return parts.join("");
+  }
+}
+
+for (const m of ["_imperial", "_len", "_lenRange", "_speed", "_temp", "_dist", "_compassSvg", "_chartSvg", "_now", "_camsOn", "_camsHtml", "_loadCams"]) {
+  SeaStateSpotCard.prototype[m] = SeaStateCard.prototype[m];
+}
+
+const SPOT_EDITOR_LABELS = {
+  spot: "Spot",
+  spots: "Several spots as a list (instead of one spot)",
+  name: "Name (empty = spot name)",
+  title: "Header (empty = Sea State)",
+  days: "Days in the outlook",
+  units: "Units",
+  navigation_path: "Open on tap (e.g. /dashboard-surf/globe)",
+  surf: "Surf height and swell window",
+  swell: "Swell",
+  wind: "Wind",
+  water: "Water temperature",
+  tide: "Tide",
+  sea_state: "Sea state",
+  chart: "48 h chart",
+  next_good: "Next good session",
+  cyclone: "Cyclone nearby",
+  sharks: "Shark area",
+  webcams: "Webcams",
+};
+
+class SeaStateSpotCardEditor extends HTMLElement {
+  setConfig(config) {
+    this._config = { ...config };
+    this._render();
+  }
+
+  set hass(hass) {
+    const first = !this._hass;
+    this._hass = hass;
+    if (this._form) this._form.hass = hass;
+    if (first) {
+      loadSpotData(hass)
+        .then((data) => {
+          this._spotList = data.spots || [];
+          this._render();
+        })
+        .catch(() => {});
+    }
+  }
+
+  _schema() {
+    const spots = (this._spotList || [])
+      .slice()
+      .sort((a, b) => (a.country || "").localeCompare(b.country || "") || a.name.localeCompare(b.name))
+      .map((s) => ({ value: s.id, label: s.country ? `${s.name} (${s.country})` : s.name }));
+    const toggles = SPOT_SHOW.map((name) => ({ name, selector: { boolean: {} } }));
+    return [
+      { name: "spot", selector: { select: { mode: "dropdown", options: [{ value: "home", label: "Home spot" }, ...spots] } } },
+      { name: "spots", selector: { select: { multiple: true, mode: "dropdown", options: spots } } },
+      {
+        type: "grid",
+        name: "",
+        schema: [
+          { name: "name", selector: { text: {} } },
+          { name: "title", selector: { text: {} } },
+          { name: "days", selector: { number: { min: 0, max: 7, mode: "slider" } } },
+          { name: "units", selector: { select: { mode: "dropdown", options: [{ value: "auto", label: "Like Home Assistant" }, { value: "metric", label: "Metric" }, { value: "imperial", label: "Imperial" }] } } },
+        ],
+      },
+      { name: "navigation_path", selector: { text: {} } },
+      { type: "expandable", name: "", title: "What to show", schema: [{ type: "grid", name: "", schema: toggles }] },
+    ];
+  }
+
+  _render() {
+    if (!this._form) {
+      this._form = document.createElement("ha-form");
+      this._form.computeLabel = (s) => SPOT_EDITOR_LABELS[s.name] || s.name;
+      this._form.addEventListener("value-changed", (ev) => {
+        const value = { ...ev.detail.value };
+        for (const k of Object.keys(value)) {
+          if (value[k] === "" || value[k] == null || (Array.isArray(value[k]) && !value[k].length)) delete value[k];
+          else if (SPOT_SHOW.includes(k) && value[k] === true) delete value[k];
+        }
+        if (value.units === "auto") delete value.units;
+        this._config = value;
+        this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: value }, bubbles: true, composed: true }));
+      });
+      this.appendChild(this._form);
+    }
+    this._form.hass = this._hass;
+    this._form.schema = this._schema();
+    const data = { spot: "home", days: 3, units: "auto", ...this._config };
+    for (const k of SPOT_SHOW) data[k] = this._config?.[k] !== false;
+    this._form.data = data;
+  }
+}
+
+if (!customElements.get("sea-state-spot-card-editor")) {
+  customElements.define("sea-state-spot-card-editor", SeaStateSpotCardEditor);
+}
+
+if (!customElements.get("sea-state-spot-card")) {
+  customElements.define("sea-state-spot-card", SeaStateSpotCard);
+  window.customCards = window.customCards || [];
+  window.customCards.push({
+    type: "sea-state-spot-card",
+    name: "Sea State Spot",
+    description: "Compact surf report for one spot or a list of spots, without the globe.",
+    preview: true,
+    documentationURL: "https://github.com/mb26-dev/ha-sea-state",
+  });
 }
