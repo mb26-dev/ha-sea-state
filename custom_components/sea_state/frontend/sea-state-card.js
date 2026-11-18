@@ -16,7 +16,7 @@ import {
 } from "./sea-state-art.js?v=0.1.0b9";
 import "./sea-state-lightning.js?v=0.1.0b9";
 
-const VERSION = "0.1.0b9";
+const VERSION = "0.1.0b10";
 
 // animated SVG markers, shown as <img> above the globe so their own animations run
 const ICON_BASE = new URL("./icons/", import.meta.url);
@@ -2125,7 +2125,7 @@ class SeaStateCard extends HTMLElement {
     const rainOn = this._config.rain !== false && !surfOnly;
     const speedPx = clamp(Math.pow(zoom, 0.3), 0.9, 2.0);
     // clouds fade a little when zoomed in close, so the sea and the spots stay readable
-    const modeAlpha = (surfOnly ? 0.4 : 1) * (zoom > 3 ? clamp(1.24 - zoom * 0.08, 0.45, 1) : 1);
+    const modeAlpha = (surfOnly ? 0.4 : this._mode === "all" ? 0.7 : 1) * (zoom > 3 ? clamp(1.24 - zoom * 0.08, 0.45, 1) : 1);
     const czf = clamp(Math.pow(zoom, 0.35), 0.85, 1.8);
     for (const c of list) {
       if (c.dead || c.age > c.life) {
@@ -2365,7 +2365,8 @@ class SeaStateCard extends HTMLElement {
     // best spots win the space
     items.sort((a, b) => (b.now?.rating ?? -1) - (a.now?.rating ?? -1));
     const iconSize = clamp(17 * Math.pow(zoom, 0.5), 32, 60);
-    const figures = this._iconsReady && (surf ? zoom >= 1.9 : zoom >= 4);
+    const allMode = this._mode === "all";
+    const figures = this._iconsReady && (surf ? zoom >= (allMode ? 1.35 : 1.9) : zoom >= 4);
     const placed = [];
     const draws = [];
     const clusters = [];
@@ -2384,7 +2385,7 @@ class SeaStateCard extends HTMLElement {
           continue;
         }
       }
-      const big = !!(figures && now && (sel || placed.length < MAX_SPOT_ICONS));
+      const big = !!(figures && now && (sel || placed.length < (allMode && zoom < 1.9 ? 14 : MAX_SPOT_ICONS)));
       const d = { s, now, pr, sel, color, alpha, night, big, members: [s] };
       if (big) placed.push({ x: pr.x, y: pr.y, members: d.members });
       draws.push(d);
@@ -2416,7 +2417,7 @@ class SeaStateCard extends HTMLElement {
         }
         hits.push({ kind: "spot", v: s, x: pr.x, y: pr.y, r: Math.max(16, iconSize * 0.55) });
       } else {
-        const r = surf ? clamp(2.4 * zf, 2.5, 6) : clamp(1.8 * zf, 2, 4.5);
+        const r = surf ? (allMode ? clamp(3.1 * zf, 3.4, 6.5) : clamp(2.4 * zf, 2.5, 6)) : clamp(1.8 * zf, 2, 4.5);
         drawSpotDot(ctx, pr.x, pr.y, r, color, alpha * (surf ? 1 : 0.8), surf && now && now.rating >= thr, t + s.seed);
         hits.push({ kind: "spot", v: s, x: pr.x, y: pr.y, r: Math.max(10, r * 2.5) });
       }
@@ -2433,7 +2434,7 @@ class SeaStateCard extends HTMLElement {
     for (const d of draws.slice().sort((a, b) => (b.sel ? 1 : 0) - (a.sel ? 1 : 0) || (b.now?.rating ?? 0) - (a.now?.rating ?? 0))) {
       const { s, now, pr, sel, big } = d;
       if (!now) continue;
-      const show = sel || (now.rating >= thr && zoom >= 1.6) || (zoom >= 2.6 && big) || zoom >= 5;
+      const show = sel || (now.rating >= thr && zoom >= (allMode ? 1.2 : 1.6)) || (zoom >= 2.6 && big) || zoom >= 5;
       if (!show) continue;
       const extra = d.members ? d.members.length - 1 : 0;
       const text = `${s.name} ${now.rating.toFixed(1)}★${extra > 0 ? `  +${extra}` : ""}`;
