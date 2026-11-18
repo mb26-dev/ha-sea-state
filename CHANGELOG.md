@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.0b3 (beta)
+
+- Spots that lie on top of each other (Uluwatu, Padang Padang, Keramas ...) are grouped: the best one shows its surfer with a +2 badge; tap the badge for the list, the globe zooms in until they separate
+- Smoother wave colours: the global wave grid is interpolated with splines, no more straight edges, diamonds or stripes on the sea
+- Spot names appear earlier when you zoom in
+- The region buttons fade out at the edge when there are more to scroll to
+- Bigger gale area markers
+- Fixed: after an update the spots kept data from the old version for up to 6 hours (for example a missing swell period); data cached by another version is now fetched again right after the start
+
 ## 0.1.0b2 (beta)
 
 - New animated marker icons for the surf spots (riding, paddling, waiting, blown out, too big), tropical cyclones and gale areas; the ring colour shows the condition or the cyclone category
