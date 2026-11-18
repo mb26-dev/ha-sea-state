@@ -1,0 +1,41 @@
+name: Render screenshots
+
+on:
+  push:
+    paths:
+      - "docs/demo/**"
+      - "custom_components/sea_state/frontend/sea-state-lightning.js"
+      - ".github/workflows/screenshots.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: screenshots
+  cancel-in-progress: true
+
+jobs:
+  render:
+    name: Render README screenshots
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Render
+        run: |
+          python -m http.server 8765 >/dev/null 2>&1 &
+          sleep 2
+          python docs/demo/render.py
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/images
+          git diff --cached --quiet || (git commit -m "Render README screenshots" && git pull --rebase && git push)
