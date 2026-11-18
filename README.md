@@ -160,6 +160,8 @@ Ocean basins for `center`: `north_atlantic`, `caribbean`, `east_pacific`, `north
 
 For a quick look on your home dashboard there is a second card without the globe: `custom:sea-state-spot-card`. It shows one spot, or several spots as a list, in the same design. Add it from the card picker ("Sea State Spot") and pick what to show in the visual editor.
 
+<img src="docs/images/spot-card.jpg" alt="Three compact spot cards: Kata Beach with surf, swell, wind, water, tide, chart, outlook and webcams, Kalim Reef without chart and outlook, and a list of five spots with stars, surf height and wind">
+
 ```yaml
 type: custom:sea-state-spot-card
 spot: home                # home spot, or a spot id such as kata or pipeline
