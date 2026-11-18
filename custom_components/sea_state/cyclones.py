@@ -37,6 +37,10 @@ CATEGORY_LABELS = {
     "category_5": "Category 5",
 }
 _KMH = re.compile(r"(\d+(?:\.\d+)?)\s*km/h", re.I)
+_POINT_LABEL = re.compile(r"(\d{1,2})/(\d{1,2})\s+(\d{1,2}):(\d{2})")
+# typical wind of a track segment class (GDACS labels them TD, TS, or with the category number)
+_CLASS_WIND = {"TD": 55.0, "TS": 90.0}
+_CAT_WIND = {1: 140.0, 2: 165.0, 3: 195.0, 4: 230.0, 5: 270.0}
 
 
 def category(wind_kmh: float | None) -> tuple[int, str]:
@@ -179,16 +183,98 @@ def _outer_ring(geom: dict[str, Any]) -> list[list[float]] | None:
     return None
 
 
+def _class_wind(label: str) -> float | None:
+    label = (label or "").strip().upper()
+    if label in _CLASS_WIND:
+        return _CLASS_WIND[label]
+    m = re.search(r"([1-5])", label)
+    if m:
+        return _CAT_WIND[int(m.group(1))]
+    m = _KMH.search(label)
+    return float(m.group(1)) if m else None
+
+
+def _point_time(label: str, ref: datetime) -> datetime | None:
+    """Time of a track point from labels like '17/11 06:00 UTC' (no year given)."""
+    m = _POINT_LABEL.search(label or "")
+    if not m:
+        return None
+    day, month, hour, minute = (int(g) for g in m.groups())
+    best = None
+    for year in (ref.year - 1, ref.year, ref.year + 1):
+        try:
+            cand = datetime(year, month, day, hour, minute, tzinfo=timezone.utc)
+        except ValueError:
+            continue
+        if best is None or abs((cand - ref).total_seconds()) < abs((best - ref).total_seconds()):
+            best = cand
+    return best
+
+
+def _track_from_points(features: list[dict[str, Any]], now: datetime) -> list[dict[str, Any]]:
+    """Track from the small 'PointRadii' circles GDACS draws at every track position."""
+    advisory = None
+    for feat in features:
+        when = _iso((feat.get("properties") or {}).get("polygondate"))
+        if when:
+            advisory = datetime.fromisoformat(when)
+            break
+    ref = advisory or now
+    # wind class of each track segment, keyed by its start and end position
+    seg_wind: dict[tuple[float, float], float] = {}
+    seg_end: dict[tuple[float, float], float] = {}
+    for feat in features:
+        geom = feat.get("geometry") or {}
+        if geom.get("type") != "LineString":
+            continue
+        coords = geom.get("coordinates") or []
+        wind = _class_wind(str((feat.get("properties") or {}).get("polygonlabel") or ""))
+        if len(coords) < 2 or wind is None:
+            continue
+        seg_wind[(round(coords[0][1], 1), round(coords[0][0], 1))] = wind
+        seg_end[(round(coords[-1][1], 1), round(coords[-1][0], 1))] = wind
+    points: dict[str, dict[str, Any]] = {}
+    for feat in features:
+        props = feat.get("properties") or {}
+        if str(props.get("featuretype") or "") != "PointRadii":
+            continue
+        when = _point_time(str(props.get("polygonlabel") or ""), ref)
+        ring = _outer_ring(feat.get("geometry") or {})
+        if not when or not ring:
+            continue
+        cen = _ring_centroid(ring)
+        if not cen:
+            continue
+        lat, lon = cen
+        key = (round(lat, 1), round(lon, 1))
+        wind = seg_wind.get(key, seg_end.get(key))
+        iso = when.isoformat()
+        points[iso] = {
+            "time": iso,
+            "lat": round(lat, 2),
+            "lon": round(lon, 2),
+            "wind_kmh": None if wind is None else round(wind),
+            "forecast": when > (advisory or now),
+        }
+    return [points[k] for k in sorted(points)]
+
+
 def parse_track(text: str, now: datetime) -> list[dict[str, Any]]:
     """Track points (past and forecast) from the GDACS event geometry.
 
-    Every time slice has wind radii polygons; the centre of the largest one is the
-    position of the storm, the strongest radius label the wind at that time.
+    GDACS draws a small circle ('PointRadii') at every past and forecast position,
+    labelled with its time, and line segments between them labelled with the storm
+    class. Older geometries only have wind radii polygons per time slice; then the
+    centre of the largest one is used as the position.
     """
     text = (text or "").lstrip(chr(0xFEFF))
     data = json.loads(text) if text.strip() else {}
+    features = data.get("features") or []
+    track = _track_from_points(features, now)
+    if len(track) >= 2:
+        return track
     slices: dict[str, dict[str, Any]] = {}
-    for feat in data.get("features") or []:
+    for feat in features:
         props = feat.get("properties") or {}
         geom = feat.get("geometry") or {}
         when = _iso(props.get("polygondate") or props.get("trackdate"))
@@ -217,7 +303,7 @@ def parse_track(text: str, now: datetime) -> list[dict[str, Any]]:
             if cen:
                 sl["pos"] = cen
                 sl["area"] = area
-    track: list[dict[str, Any]] = []
+    track = []
     for when in sorted(slices):
         sl = slices[when]
         if not sl["pos"]:
