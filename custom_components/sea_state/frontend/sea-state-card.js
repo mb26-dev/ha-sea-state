@@ -3,24 +3,70 @@
  * https://github.com/mb26-dev/ha-sea-state
  */
 
-import { DEG, ecef, viewFrame, sunDirection, loadEarth, renderEarth, waveColor, WAVE_STOPS } from "./sea-state-earth.js";
+import { DEG, ecef, viewFrame, sunDirection, loadEarth, renderEarth, waveColor, WAVE_STOPS } from "./sea-state-earth.js?v=0.1.0b2";
 import {
   CONDITION_COLORS,
   CONDITION_LABELS,
   CATEGORY_COLORS,
   rgba,
-  drawSurfer,
   drawSpotDot,
   cloudSprite,
   drawLightning,
   drawCyclone,
-} from "./sea-state-art.js";
+} from "./sea-state-art.js?v=0.1.0b2";
 
-const VERSION = "0.1.0";
+const VERSION = "0.1.0b2";
+
+// animated SVG markers, shown as <img> above the globe so their own animations run
+const ICON_BASE = new URL("./icons/", import.meta.url);
+const ICON_FILES = {
+  riding: "surfer.svg",
+  paddling: "surf_paddle.svg",
+  sitting: "waiting_surfer.svg",
+  windy: "blown-out.svg",
+  flag: "too-big.svg",
+  cyclone: "cyclone.svg",
+  gale: "storm-area.svg",
+};
+const POSE_ICON = { barrel: "riding", riding: "riding", paddling: "paddling", sitting: "sitting", windy: "windy", flag: "flag" };
+const OWN_RING = new Set(["windy", "flag", "gale"]);
+const MAX_SPOT_ICONS = 28;
+const ICON_TEXT = {};
+const ICON_URLS = new Map();
+let iconLoad = null;
+
+function loadIcons() {
+  if (!iconLoad) {
+    iconLoad = Promise.all(
+      Object.entries(ICON_FILES).map(async ([kind, file]) => {
+        try {
+          const resp = await fetch(new URL(`${file}?v=${VERSION}`, ICON_BASE));
+          if (resp.ok) ICON_TEXT[kind] = await resp.text();
+        } catch (_err) {
+          // the canvas dots stay as fallback
+        }
+      })
+    );
+  }
+  return iconLoad;
+}
+
+/** object URL of an icon, its outer ring recoloured (condition or storm category) */
+function iconUrl(kind, ring) {
+  const key = `${kind}|${ring || ""}`;
+  let url = ICON_URLS.get(key);
+  if (url) return url;
+  let text = ICON_TEXT[kind];
+  if (!text) return null;
+  if (ring) text = text.replace(/(r="56" fill="none" stroke=")(#ffffff|url\(#ringGradC\))"/, `$1${ring}"`);
+  url = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" }));
+  ICON_URLS.set(key, url);
+  return url;
+}
 const MODES = [
-  ["ocean", "🌊 Ocean & weather"],
-  ["surf", "🏄 Surf"],
-  ["all", "All"],
+  ["ocean", "Ocean & weather", "icon-ocean-weather.svg"],
+  ["surf", "Surf", "icon-surf.svg"],
+  ["all", "All", null],
 ];
 // surf regions: key -> [lat, lon, zoom]
 const SURF_VIEWS = {
@@ -258,6 +304,9 @@ const STYLE = `
   canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   canvas.fx { touch-action: none; cursor: grab; }
   canvas.fx.dragging { cursor: grabbing; }
+  .markers { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .markers img { position: absolute; left: 0; top: 0; display: block; will-change: transform; user-select: none; -webkit-user-drag: none; }
+  .markers img.sel { filter: drop-shadow(0 0 7px rgba(255,255,255,.85)); }
   .top { position: absolute; top: 10px; left: 12px; right: 12px; pointer-events: none; display: flex; flex-direction: column; gap: 7px; }
   .title { display: flex; align-items: baseline; gap: 8px; min-width: 0; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
   .title b { font-size: 16px; letter-spacing: .4px; font-weight: 650; flex: 0 0 auto; }
@@ -271,6 +320,7 @@ const STYLE = `
   .chip.on { background: rgba(40,170,210,.26); border-color: rgba(79,211,232,.8); color: #fff; }
   .chip .n { opacity: .75; margin-left: 4px; }
   .chip.sep { margin-left: 4px; }
+  .chip .mi { width: 16px; height: 16px; margin: -2px 5px -3px -2px; vertical-align: middle; }
   .regions .chip { font-size: 11px; padding: 3px 9px; background: rgba(8,16,26,.5); }
   .regions .chip.quiet { color: #a9b8c4; }
   .regions .chip .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; vertical-align: 0.5px; }
@@ -448,6 +498,7 @@ class SeaStateCard extends HTMLElement {
           <canvas class="stars"></canvas>
           <canvas class="earth"></canvas>
           <canvas class="fx"></canvas>
+          <div class="markers"></div>
           <div class="msg">Loading the oceans...</div>
           <div class="top">
             <div class="title"><b></b><span class="sub"></span></div>
@@ -478,6 +529,13 @@ class SeaStateCard extends HTMLElement {
     this._cStars = $("canvas.stars");
     this._cEarth = $("canvas.earth");
     this._cFx = $("canvas.fx");
+    this._markers = $(".markers");
+    this._iconMap = new Map();
+    this._icons = [];
+    loadIcons().then(() => {
+      this._iconsReady = true;
+      this._loop();
+    });
     this._msg = $(".msg");
     this._titleEl = $(".title b");
     this._subEl = $(".title .sub");
@@ -989,7 +1047,10 @@ class SeaStateCard extends HTMLElement {
   _renderChips() {
     if (!this._modesEl) return;
     const firing = this._spots.filter((s) => s.now && s.now.rating >= this._firingThreshold()).length;
-    const chips = MODES.map(([key, label]) => `<span class="chip ${this._mode === key ? "on" : ""}" data-m="${key}">${label}</span>`);
+    const chips = MODES.map(([key, label, icon]) => {
+      const img = icon ? `<img class="mi" src="${new URL(`${icon}?v=${VERSION}`, ICON_BASE).href}" alt="">` : "";
+      return `<span class="chip ${this._mode === key ? "on" : ""}" data-m="${key}">${img}${label}</span>`;
+    });
     if (this._showSurf()) {
       chips.push(`<span class="chip sep ${this._firingOnly ? "on" : ""}" data-f="firing">Firing<span class="n">${firing}</span></span>`);
     }
@@ -1688,6 +1749,7 @@ class SeaStateCard extends HTMLElement {
     const zoom = this._view.zoom;
     const t = this._t;
     const hits = [];
+    this._icons = [];
     const zf = clamp(Math.pow(zoom, 0.5), 0.85, 3.4);
     const low = this._quality() === "low";
 
@@ -1713,12 +1775,58 @@ class SeaStateCard extends HTMLElement {
     this._drawSpots(ctx, G, R, zoom, zf, t, sun, hits);
     this._drawHome(ctx, G, R);
     this._hits = hits;
+    this._syncIcons();
+  }
+
+  /** place the animated SVG markers; each keeps its <img> while visible so animations run on */
+  _syncIcons() {
+    const list = this._iconsReady ? this._icons : [];
+    const map = this._iconMap;
+    const seen = new Set();
+    for (const it of list) {
+      const url = iconUrl(it.kind, it.ring);
+      if (!url) continue;
+      let img = map.get(it.id);
+      if (!img) {
+        img = document.createElement("img");
+        img.alt = "";
+        img.draggable = false;
+        this._markers.appendChild(img);
+        map.set(it.id, img);
+      }
+      seen.add(it.id);
+      if (img._src !== url) {
+        img.src = url;
+        img._src = url;
+      }
+      const sz = Math.round(it.size);
+      if (img._sz !== sz) {
+        img.style.width = `${sz}px`;
+        img.style.height = `${sz}px`;
+        img._sz = sz;
+      }
+      img.style.transform = `translate(${(it.x - sz / 2).toFixed(1)}px, ${(it.y - sz / 2).toFixed(1)}px)`;
+      const op = it.alpha.toFixed(2);
+      if (img._op !== op) {
+        img.style.opacity = op;
+        img._op = op;
+      }
+      img.classList.toggle("sel", !!it.sel);
+    }
+    for (const [id, img] of map) {
+      if (!seen.has(id)) {
+        img.remove();
+        map.delete(id);
+      }
+    }
   }
 
   /** wave crests rolling with the swell: short white arcs moving in the wave direction */
   _drawCrests(ctx, dt, G, R, zoom, zf, low, sun) {
     const W = this._w, H = this._h;
-    const target = Math.round(clamp((W * H) / (low ? 1400 : 820), low ? 160 : 260, low ? 420 : 900) * (this._mode === "surf" ? 1.0 : 0.85));
+    // fewer crests when zoomed in, otherwise the sea turns into scratches
+    const zoomThin = 1 / Math.max(1, Math.sqrt(zoom / 2.5));
+    const target = Math.round(clamp((W * H) / (low ? 1400 : 820), low ? 160 : 260, low ? 420 : 900) * (this._mode === "surf" ? 1.0 : 0.85) * zoomThin);
     const list = this._crests;
     while (list.length < target) list.push({ dead: true });
     if (list.length > target) list.length = target;
@@ -1762,7 +1870,7 @@ class SeaStateCard extends HTMLElement {
       const hgt = o.h;
       const a = life * clamp(0.22 + hgt / 4, 0.22, 0.95) * smooth(0.05, 0.3, pr.z);
       const night = smooth(0.1, -0.15, (Math.cos(c.lat * DEG) * Math.cos(c.lon * DEG)) * sun[0] + (Math.cos(c.lat * DEG) * Math.sin(c.lon * DEG)) * sun[1] + Math.sin(c.lat * DEG) * sun[2]);
-      const L = (4.2 + 2.6 * Math.sqrt(hgt)) * zf * (0.55 + 0.45 * fore) * (0.75 + 0.5 * ((c.ph * 7) % 1));
+      const L = (4.2 + 2.6 * Math.sqrt(hgt)) * Math.min(zf, 2.2) * (0.55 + 0.45 * fore) * (0.75 + 0.5 * ((c.ph * 7) % 1));
       const px = -dy, py = dx;
       const bend = L * 0.22;
       // a tapered crescent reads as a breaking crest; a dark one just behind gives it body
@@ -1800,7 +1908,9 @@ class SeaStateCard extends HTMLElement {
     if (list.length > target) list.length = target;
     const rainOn = this._config.rain !== false && !surfOnly;
     const speedPx = clamp(Math.pow(zoom, 0.3), 0.9, 2.0);
-    const modeAlpha = surfOnly ? 0.4 : 1;
+    // clouds fade a little when zoomed in close, so the sea and the spots stay readable
+    const modeAlpha = (surfOnly ? 0.4 : 1) * (zoom > 3 ? clamp(1.24 - zoom * 0.08, 0.45, 1) : 1);
+    const czf = clamp(Math.pow(zoom, 0.35), 0.85, 1.8);
     for (const c of list) {
       if (c.dead || c.age > c.life) {
         c.dead = true;
@@ -1835,7 +1945,7 @@ class SeaStateCard extends HTMLElement {
         c.dead = true;
         continue;
       }
-      const size = (44 + w.cc * 0.5) * zf * c.size;
+      const size = (44 + w.cc * 0.5) * czf * c.size;
       if (pr.x < -size || pr.x > W + size || pr.y < -size || pr.y > H + size) {
         c.dead = true;
         continue;
@@ -1903,16 +2013,24 @@ class SeaStateCard extends HTMLElement {
       if (this._cyclones.some((c) => distKm(c.lat, c.lon, s.lat, s.lon) < 700)) continue;
       const pr = this._project(s.p, G, R);
       if (pr.z <= 0.05) continue;
-      const r = clamp(R * 0.035 * Math.sqrt(s.cells || 1), 10, 70);
       const a = smooth(0.05, 0.25, pr.z);
-      const spin = s.lat >= 0 ? 1 : -1;
-      ctx.strokeStyle = `rgba(220,230,240,${0.45 * a})`;
-      ctx.lineWidth = 1.4;
-      for (let k = 0; k < 3; k++) {
-        const ph = -spin * t * 0.6 + (k * Math.PI * 2) / 3;
-        ctx.beginPath();
-        ctx.arc(pr.x, pr.y, r * (0.55 + 0.2 * k), ph, ph + 1.4);
-        ctx.stroke();
+      let r;
+      if (this._iconsReady && ICON_TEXT.gale) {
+        const size = clamp(24 + 4 * Math.sqrt(s.cells || 1) + 6 * Math.log2(Math.max(1, zoom)), 30, 56);
+        r = size / 2;
+        const sel = this._selected && this._selected.kind === "storm" && this._selected.v === s;
+        this._icons.push({ id: `gale:${s.lat.toFixed(1)},${s.lon.toFixed(1)}`, kind: "gale", ring: null, x: pr.x, y: pr.y, size, alpha: a, sel });
+      } else {
+        r = clamp(R * 0.035 * Math.sqrt(s.cells || 1), 10, 70);
+        const spin = s.lat >= 0 ? 1 : -1;
+        ctx.strokeStyle = `rgba(220,230,240,${0.45 * a})`;
+        ctx.lineWidth = 1.4;
+        for (let k = 0; k < 3; k++) {
+          const ph = -spin * t * 0.6 + (k * Math.PI * 2) / 3;
+          ctx.beginPath();
+          ctx.arc(pr.x, pr.y, r * (0.55 + 0.2 * k), ph, ph + 1.4);
+          ctx.stroke();
+        }
       }
       if (zoom >= 1.6) {
         ctx.fillStyle = `rgba(6,10,18,${0.55 * a})`;
@@ -1955,6 +2073,17 @@ class SeaStateCard extends HTMLElement {
       const ex = Math.cos(lat * DEG) * Math.cos(lon * DEG), ey = Math.cos(lat * DEG) * Math.sin(lon * DEG), ez = Math.sin(lat * DEG);
       const night = smooth(0.08, -0.14, ex * sun[0] + ey * sun[1] + ez * sun[2]);
       drawCyclone(ctx, pr.x, pr.y, r, t, lat >= 0 ? 1 : -1, c.category || 0, smooth(0.03, 0.2, pr.z), night, sel);
+      const catColor = CATEGORY_COLORS[Math.max(0, Math.min(5, c.category || 0))];
+      this._icons.push({
+        id: `cyc:${c.id}`,
+        kind: "cyclone",
+        ring: catColor,
+        x: pr.x,
+        y: pr.y,
+        size: clamp(r * 0.55, 34, 76) * (sel ? 1.12 : 1),
+        alpha: smooth(0.03, 0.2, pr.z),
+        sel,
+      });
       ctx.save();
       ctx.font = "650 11px system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
       ctx.textBaseline = "middle";
@@ -2018,8 +2147,8 @@ class SeaStateCard extends HTMLElement {
     }
     // best spots win the space
     items.sort((a, b) => (b.now?.rating ?? -1) - (a.now?.rating ?? -1));
-    const unit = clamp(2.6 * Math.pow(zoom, 0.55), 3.2, 9.5);
-    const figures = surf ? zoom >= 1.9 : zoom >= 4;
+    const iconSize = clamp(17 * Math.pow(zoom, 0.5), 32, 60);
+    const figures = this._iconsReady && (surf ? zoom >= 1.9 : zoom >= 4);
     const placed = [];
     const draws = [];
     for (const it of items) {
@@ -2029,7 +2158,7 @@ class SeaStateCard extends HTMLElement {
       const alpha = smooth(0.03, 0.2, pr.z);
       const ex = s.p[0] * sun[0] + s.p[1] * sun[1] + s.p[2] * sun[2];
       const night = smooth(0.08, -0.14, ex);
-      let big = figures && now && (!placed.some((q) => Math.hypot(q.x - pr.x, q.y - pr.y) < unit * 4.2) || sel);
+      const big = !!(figures && now && (sel || (placed.length < MAX_SPOT_ICONS && !placed.some((q) => Math.hypot(q.x - pr.x, q.y - pr.y) < iconSize * 0.92))));
       if (big) placed.push({ x: pr.x, y: pr.y });
       draws.push({ s, now, pr, sel, color, alpha, night, big });
     }
@@ -2038,8 +2167,18 @@ class SeaStateCard extends HTMLElement {
     for (const d of draws) {
       const { s, now, pr, sel, color, alpha, night, big } = d;
       if (big) {
-        drawSurfer(ctx, pr.x, pr.y, unit, now.pose, t, { color, night, alpha, selected: sel, seed: s.seed });
-        hits.push({ kind: "spot", v: s, x: pr.x, y: pr.y - unit, r: Math.max(16, unit * 2.8) });
+        const kind = POSE_ICON[now.pose] || "riding";
+        this._icons.push({
+          id: `spot:${s.id}`,
+          kind,
+          ring: OWN_RING.has(kind) ? null : color,
+          x: pr.x,
+          y: pr.y,
+          size: iconSize * (sel ? 1.18 : 1),
+          alpha: alpha * (1 - 0.3 * night),
+          sel,
+        });
+        hits.push({ kind: "spot", v: s, x: pr.x, y: pr.y, r: Math.max(16, iconSize * 0.55) });
       } else {
         const r = surf ? clamp(2.4 * zf, 2.5, 6) : clamp(1.8 * zf, 2, 4.5);
         drawSpotDot(ctx, pr.x, pr.y, r, color, alpha * (surf ? 1 : 0.8), surf && now && now.rating >= thr, t + s.seed);
@@ -2060,8 +2199,8 @@ class SeaStateCard extends HTMLElement {
       if (!show) continue;
       const text = `${s.name} ${now.rating.toFixed(1)}★`;
       const tw = ctx.measureText(text).width;
-      const lx = pr.x + (big ? unit * 2.4 : 8);
-      const ly = pr.y - (big ? unit * 1.4 : 0);
+      const lx = pr.x + (big ? iconSize * 0.55 + 5 : 8);
+      const ly = pr.y;
       const rect = [lx - 4, ly - 8, tw + 8, 16];
       if (rect[0] + rect[2] > W - 48 || ly < top || ly > H - 20) continue;
       const lg = this._legendBox();
