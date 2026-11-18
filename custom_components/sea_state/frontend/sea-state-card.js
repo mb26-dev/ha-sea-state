@@ -2761,7 +2761,7 @@ class SeaStateSpotCard extends HTMLElement {
   }
 
   getGridOptions() {
-    return { columns: 6, min_columns: 4 };
+    return { columns: 12, min_columns: 6 };
   }
 
   async _load() {
