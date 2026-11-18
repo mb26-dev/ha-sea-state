@@ -277,6 +277,39 @@ def test_cyclones():
     assert cyclones.basin_word(-15, 120) == "Cyclone"
 
 
+def _circle(lon, lat, r=0.3, n=16):
+    pts = [[lon + r * math.cos(2 * math.pi * k / n), lat + r * math.sin(2 * math.pi * k / n)] for k in range(n)]
+    return pts + [pts[0]]
+
+
+def test_cyclone_point_track():
+    """Real GDACS layout: PointRadii circles labelled with the time, class labelled segments."""
+    adv = {"polygondate": "2026-11-17T18:00:00"}
+    pts = [("16/11 18:00 UTC", 86.7, 11.3), ("17/11 18:00 UTC", 87.3, 13.1), ("18/11 06:00 UTC", 86.7, 13.8), ("19/11 18:00 UTC", 84.4, 17.5)]
+    feats = [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [_circle(lon, lat)]},
+              "properties": {**adv, "featuretype": "PointRadii", "polygonlabel": label, "Class": "Point_Polygon_Point_%d" % k}}
+             for k, (label, lon, lat) in enumerate(pts)]
+    feats.append({"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[87.3, 13.1], [86.7, 13.8]]},
+                  "properties": {**adv, "polygonlabel": "TS", "Class": "Line_Line_0", "forecast": True}})
+    feats.append({"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[86.7, 13.8], [84.4, 17.5]]},
+                  "properties": {**adv, "polygonlabel": "TD", "Class": "Line_Line_1", "forecast": True}})
+    feats.append({"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [_square(87.0, 14.0, 3.0)]},
+                  "properties": {"polygondate": "2026-11-18T06:00:00", "polygonlabel": "18/11 06:00", "featuretype": "WindRadii"}})
+    track = cyclones.parse_track(json.dumps({"type": "FeatureCollection", "features": feats}), NOW)
+    assert [p["time"][:16] for p in track] == ["2026-11-16T18:00", "2026-11-17T18:00", "2026-11-18T06:00", "2026-11-19T18:00"]
+    assert [p["forecast"] for p in track] == [False, False, True, True]
+    assert abs(track[2]["lat"] - 13.8) < 0.05 and abs(track[2]["lon"] - 86.7) < 0.05
+    assert track[1]["wind_kmh"] == 90 and track[3]["wind_kmh"] == 55
+    # new year: a December point read in January belongs to the old year
+    assert cyclones._point_time("31/12 18:00 UTC", datetime(2027, 1, 1, 6, tzinfo=timezone.utc)).year == 2026
+
+
+def test_period_fallback():
+    marine = {"hourly": {"time": [0], "swell_wave_peak_period": [None], "swell_wave_period": [9.5], "wave_period": [7.0]}}
+    row = surf.build_rows(marine, None)[0]
+    assert row["sw_per"] == 9.5 and row["per"] == 7.0
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for t in tests:
