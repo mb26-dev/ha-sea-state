@@ -92,13 +92,17 @@ export function textureSize() {
   return big ? [4096, 2048] : [2048, 1024];
 }
 
-/** ocean mask (0..1) from the Blue Marble colours: the bathymetry is clearly blue */
+/**
+ * ocean mask (0..1) from the Blue Marble colours. The deep ocean is almost black
+ * (around rgb 1,5,17), so the test is how strongly blue dominates, not how bright
+ * the blue is; land, ice and snow never have blue far above red and green.
+ */
 function oceanMask(day, w, h) {
   const mask = new Uint8Array(w * h);
   for (let i = 0, o = 0; i < w * h; i++, o += 4) {
     const r = day[o], g = day[o + 1], b = day[o + 2];
-    const blue = b - r;
-    const v = smooth(14, 40, blue) * smooth(-14, 6, b - g * 0.92);
+    const ratio = b / (Math.max(r, g) + 2);
+    const v = smooth(1.25, 1.6, ratio) * smooth(5, 10, b);
     mask[i] = Math.round(v * 255);
   }
   return mask;

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.0b2 (beta)
+
+- New animated marker icons for the surf spots (riding, paddling, waiting, blown out, too big), tropical cyclones and gale areas; the ring colour shows the condition or the cyclone category
+- New icons for the Ocean & weather and Surf buttons
+- New logo and icon
+- Fixed: the deep ocean was treated as land, so the wave colours were missing in patches and showed stripes along undersea ridges
+- Fixed: the swell period was missing at many spots (falls back to the mean swell period), which also made the ratings too uniform
+- Fixed: tropical cyclone tracks now use the exact GDACS track points, including the past positions
+- Clouds and wave crests stay calmer when zoomed in close
+
 ## 0.1.0b1 (beta)
 
 First beta.

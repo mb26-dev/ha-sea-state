@@ -4,7 +4,7 @@ from __future__ import annotations
 
 DOMAIN = "sea_state"
 NAME = "Sea State Forecast"
-VERSION = "0.1.0"
+VERSION = "0.1.0b2"
 
 CONF_SOURCES = "sources"
 CONF_HOME_SPOT = "home_spot"
