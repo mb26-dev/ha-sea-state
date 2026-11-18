@@ -1,8 +1,9 @@
 """Draw the Sea State Forecast brand images (icon, logo, dark variants) from code.
 
-The artwork is generated, so there is no binary source file: a night globe with
-wave height colours, a curling wave and a small surfer. The GitHub workflow runs
-this script whenever brand_src changes and commits the PNG files Home Assistant needs.
+If a designed banner image lies in brand_src/source, the logo and icon are cut from
+it. Otherwise the artwork is drawn: a night globe with wave height colours, a curling
+wave and a small surfer. The GitHub workflow runs this script whenever brand_src
+changes and commits the PNG files Home Assistant needs.
 """
 
 from __future__ import annotations
@@ -197,11 +198,36 @@ def logo(height: int) -> Image.Image:
     return img.resize((W // S, H // S), Image.LANCZOS)
 
 
-for name, size in (("icon.png", 256), ("icon@2x.png", 512)):
-    emblem(size).save(OUT / name, optimize=True)
-for suffix, height in (("", 128), ("@2x", 256)):
-    banner = logo(height)
-    for base in ("logo", "dark_logo"):
-        banner.save(OUT / f"{base}{suffix}.png", optimize=True)
+SOURCE_DIR = Path(__file__).resolve().parent / "source"
+# square crop of the emblem in the designed banner (left, top, right, bottom as fractions)
+EMBLEM_BOX = (250 / 2576, 0.0, 889 / 2576, 1.0)
+
+
+def from_source(path: Path) -> None:
+    """Use a designed banner image: the whole banner becomes the logo, its emblem the icon."""
+    src = Image.open(path).convert("RGBA")
+    w, h = src.size
+    box = (round(EMBLEM_BOX[0] * w), round(EMBLEM_BOX[1] * h), round(EMBLEM_BOX[2] * w), round(EMBLEM_BOX[3] * h))
+    side = min(box[2] - box[0], box[3] - box[1])
+    cx, cy = (box[0] + box[2]) // 2, (box[1] + box[3]) // 2
+    square = src.crop((cx - side // 2, cy - side // 2, cx - side // 2 + side, cy - side // 2 + side))
+    for name, size in (("icon.png", 256), ("icon@2x.png", 512)):
+        square.resize((size, size), Image.LANCZOS).save(OUT / name, optimize=True)
+    for suffix, height in (("", 128), ("@2x", 256)):
+        banner = src.resize((round(w * height / h), height), Image.LANCZOS)
+        for base in ("logo", "dark_logo"):
+            banner.save(OUT / f"{base}{suffix}.png", optimize=True)
+
+
+sources = sorted(p for p in SOURCE_DIR.glob("*") if p.suffix.lower() in (".png", ".jpg", ".jpeg")) if SOURCE_DIR.is_dir() else []
+if sources:
+    from_source(sources[0])
+else:
+    for name, size in (("icon.png", 256), ("icon@2x.png", 512)):
+        emblem(size).save(OUT / name, optimize=True)
+    for suffix, height in (("", 128), ("@2x", 256)):
+        banner = logo(height)
+        for base in ("logo", "dark_logo"):
+            banner.save(OUT / f"{base}{suffix}.png", optimize=True)
 
 print("brand images written to", OUT)
