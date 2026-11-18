@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.0b6 (beta)
+
+- Fixed: on dashboards with hass-swipe-navigation, dragging the globe with a finger switched to another view instead of turning the globe
+
 ## 0.1.0b5 (beta)
 
 - Daylight everywhere: the whole visible half of the globe is now lit by default, so waves, storms and spots are always easy to see; the real day and night with city lights is still available with `lighting: real`
