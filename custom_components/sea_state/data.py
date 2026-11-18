@@ -524,6 +524,7 @@ class SeaStateData:
             "grid_updated": self.grid_updated,
             "sources": self.source_status(),
             "webcams": self.webcams_enabled,
+            "cyclone_radius_km": self.cyclone_radius_km,
             "regions": REGIONS,
             "spots": [_card_spot(s, evals.get(s["id"])) for s in self.spots],
             "cyclones": cyclones,
