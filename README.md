@@ -34,6 +34,10 @@ No API key, no account.
 | **Ocean & weather: Southern Ocean gales** | |
 | <img src="docs/images/ocean-weather.jpg" alt="Ocean and weather mode over the South Pacific: wave heights up to 6 m, clouds and two gale areas with wind and pressure"> | Wave heights as colours, crests rolling with the swell, clouds drifting with the wind and gale areas with wind speed and pressure. Antarctica in the south, South America on the night side with its city lights. |
 
+**Compact spot card for the home dashboard:** one spot or a list of spots, without the globe
+
+<img src="docs/images/spot-card.jpg" alt="Three compact spot cards: Kata Beach with surf, swell, wind, water, tide, chart, outlook and webcams, Kalim Reef with webcams, and a list of five spots with stars, surf height and wind">
+
 **Webcams at the spot:** check the weather and the crowd before you go (optional, with a free Windy key)
 
 <img src="docs/images/webcams.jpg" alt="Kata Beach details with two live webcams of Kata Yai Beach and Karon Beach next to the globe over the Indian Ocean">
