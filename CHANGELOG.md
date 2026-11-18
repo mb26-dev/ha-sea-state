@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0b9 (beta)
+
+- New card `custom:sea-state-lightning-card`: live lightning strikes around home on a zoomable NASA map (Blue Marble relief or today's satellite image) with range rings, a radar sweep, flashing fresh strikes, the animated lightning marker on the newest one, the storm trend and tiles for your places
+- Strikes come from the Blitzortung integration (its `geo_location` entities), no extra key needed
+- The card came over from Magmarium, where it was in a beta for one day: lightning is weather, so it belongs here
+
 ## 0.1.0b8 (beta)
 
 - New compact card `custom:sea-state-spot-card` for the home dashboard: one spot (surfer, rating, surf, swell, wind, water, tide, sea state, 48 h chart, outlook, next good session, cyclone nearby, shark area, webcams) or several spots as a list, without the globe; every part can be switched on and off in the visual editor

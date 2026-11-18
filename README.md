@@ -42,6 +42,10 @@ No API key, no account.
 
 <img src="docs/images/webcams.jpg" alt="Kata Beach details with two live webcams of Kata Yai Beach and Karon Beach next to the globe over the Indian Ocean">
 
+**Lightning card for the home dashboard:** live strikes around home on a radar map (with the Blitzortung integration)
+
+<img src="docs/images/lightning-card.jpg" alt="Two lightning cards: a thunderstorm moving towards Kuta, Bali on the radar map with range rings, fresh strikes, the storm trend Nearing, tiles for nearby surf spots and the list of the newest strikes">
+
 ## Features
 
 **Lovelace card** `custom:sea-state-card` (installed and registered automatically)
@@ -54,6 +58,7 @@ No API key, no account.
 - **Gale areas at sea** (Beaufort 8 and more) with wind and pressure
 - **Surf spots** with a little surfer: sitting on a flat sea, paddling, riding, in the barrel when it is epic, a red flag when it is too big, spray when it is blown out
 - **Compact spot card:** one spot or a list of spots for the home dashboard, without the globe, everything selectable in the visual editor
+- **Lightning card:** live strikes around home on a radar map with range rings, the storm trend and your places, from the Blitzortung integration
 - **Webcams (optional):** up to three live webcams near a spot, beach cams first, with the last daylight image at night (free Windy key)
 - **Shark areas:** spots where sharks are part of the local ecosystem get a small shark marker, and their details name the species, the local safety measures and the official live service for the area
 - **Three modes:** Ocean & weather, Surf, or All, plus a **Firing** filter for the spots that work right now
@@ -193,6 +198,39 @@ title: My breaks
 spots: [kata, uluwatu, pipeline, jeffreys_bay]
 ```
 
+### Lightning card
+
+Thunderstorms are what ends a session the fastest. `custom:sea-state-lightning-card` shows the live strikes around your home on a zoomable map: NASA Blue Marble relief, or with the 🛰 button today's VIIRS satellite image. Range rings and a radar sweep around home, fresh strikes flash white and fade through yellow and orange to red, the newest one gets the animated lightning marker. Tiles show the strikes of the last 10 minutes and the last hour, the nearest one and the storm trend (nearing, moving away or steady), plus one tile per place, for example your favourite breaks. Tap a strike for distance, direction and time.
+
+The strikes come from the [Blitzortung](https://github.com/mrk-its/homeassistant-blitzortung) integration (HACS), which creates a `geo_location` entity for every strike within its radius. Install it first and set its radius and time window to match the card.
+
+<img src="docs/images/lightning-card.jpg" alt="Lightning card with a thunderstorm moving towards Kuta, Bali">
+
+```yaml
+type: custom:sea-state-lightning-card
+title: Lightning Watch
+home_name: Kuta
+radius_km: 100            # radar radius, like the Blitzortung radius
+minutes: 120              # how long a strike stays on the map, like its time window
+distance_entity: sensor.blitzortung_lightning_distance   # optional, for the "nearest" line
+map: relief               # or satellite
+height: 300
+list: 5                   # newest strikes in the list, 0 to hide
+places:
+  - name: Canggu
+    lat: -8.649
+    lon: 115.13
+    radius_km: 8
+views:                    # buttons above the map, the first is the start view
+  - name: Kuta
+    radius_km: 30
+  - name: Radar
+    radius_km: 110
+view: 1
+```
+
+Other options: `center: [lat, lon]` (default: your home), `source` (geo_location source, default `blitzortung`) or `entities` (a fixed list of geo_location entities).
+
 ### Surf spots and regions
 
 | Key | Region | Spots |
@@ -292,6 +330,8 @@ A star on GitHub, a bug report or a screenshot of your dashboard helps just as m
 - Logo, surfer, shark, storm and cyclone markers and mode icons: original artwork by mb26-dev
 - Shark areas link to the official services listed above; their data stays with them
 - Webcams (optional, with your own key): webcams provided by [windy.com](https://www.windy.com) through the Windy Webcams API
+- Lightning strikes: [Blitzortung.org](https://www.blitzortung.org) through the Blitzortung integration for Home Assistant; map tiles of the lightning card: [NASA GIBS](https://earthdata.nasa.gov/gibs) (Blue Marble shaded relief, VIIRS true colour, coastlines)
+- Lightning marker: original artwork by mb26-dev
 - Waves, crests, clouds, rain and cyclone spirals on the globe are drawn by the card itself
 
 See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for details.

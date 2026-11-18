@@ -26,6 +26,16 @@ The globe uses NASA imagery, downloaded once at runtime and not shipped with the
 
 NASA imagery is generally not subject to copyright in the United States; credit "NASA Earth Observatory".
 
+## Blitzortung.org
+
+The lightning card shows the strikes that the Blitzortung integration for Home Assistant receives from [Blitzortung.org](https://www.blitzortung.org), a community network of lightning detectors. Sea State Forecast does not download them itself.
+
+- The data is for private, non-commercial use and comes without any guarantee; it is not an official warning.
+
+## NASA GIBS
+
+The map of the lightning card is loaded by the browser from [NASA GIBS](https://earthdata.nasa.gov/gibs) (Global Imagery Browse Services): Blue Marble shaded relief and bathymetry, VIIRS corrected reflectance true colour and coastlines. NASA imagery is generally not subject to copyright in the United States; credit "NASA GIBS".
+
 ## Artwork
 
-The surfers, waves, clouds, rain, lightning, cyclone spirals and the brand images are original artwork, drawn by code in this repository.
+The surfers, waves, clouds, rain, lightning, cyclone spirals, the lightning marker and the brand images are original artwork by mb26-dev.
