@@ -3,7 +3,7 @@
  * https://github.com/mb26-dev/ha-sea-state
  */
 
-import { DEG, ecef, viewFrame, sunDirection, loadEarth, renderEarth, upsampleGrid, waveColor, WAVE_STOPS } from "./sea-state-earth.js?v=0.1.0b3";
+import { DEG, ecef, viewFrame, sunDirection, loadEarth, renderEarth, upsampleGrid, waveColor, WAVE_STOPS } from "./sea-state-earth.js?v=0.1.0b4";
 import {
   CONDITION_COLORS,
   CONDITION_LABELS,
@@ -13,9 +13,9 @@ import {
   cloudSprite,
   drawLightning,
   drawCyclone,
-} from "./sea-state-art.js?v=0.1.0b3";
+} from "./sea-state-art.js?v=0.1.0b4";
 
-const VERSION = "0.1.0b3";
+const VERSION = "0.1.0b4";
 
 // animated SVG markers, shown as <img> above the globe so their own animations run
 const ICON_BASE = new URL("./icons/", import.meta.url);
@@ -27,9 +27,10 @@ const ICON_FILES = {
   flag: "too-big.svg",
   cyclone: "cyclone.svg",
   gale: "storm-area.svg",
+  shark: "shark-warning.svg",
 };
 const POSE_ICON = { barrel: "riding", riding: "riding", paddling: "paddling", sitting: "sitting", windy: "windy", flag: "flag" };
-const OWN_RING = new Set(["windy", "flag", "gale"]);
+const OWN_RING = new Set(["windy", "flag", "gale", "shark"]);
 const MAX_SPOT_ICONS = 28;
 const ICON_TEXT = {};
 const ICON_URLS = new Map();
@@ -391,6 +392,12 @@ const STYLE = `
   .days .d { opacity: .8; white-space: nowrap; }
   .days .s { color: #ffcf3a; letter-spacing: .5px; white-space: nowrap; }
   .days .w { opacity: .7; white-space: nowrap; text-align: right; }
+  .sharkbox { margin: 9px 0 4px; padding: 8px 9px; border-radius: 10px; background: rgba(239,68,68,.09); border: 1px solid rgba(239,68,68,.32); display: flex; gap: 9px; align-items: flex-start; }
+  .sharkbox img { width: 34px; height: 34px; flex: 0 0 34px; }
+  .sharkbox .t { font-weight: 650; font-size: 12.5px; margin-bottom: 1px; }
+  .sharkbox a { color: #6fdcf0; text-decoration: none; font-weight: 600; }
+  .sharkbox a:hover { text-decoration: underline; }
+  .legend .shk { width: 14px; height: 14px; margin: -3px 3px -3px 0; vertical-align: middle; }
   .links { margin-top: 9px; display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12px; }
   .links a { color: #6fdcf0; text-decoration: none; }
   .links a:hover { text-decoration: underline; }
@@ -428,6 +435,7 @@ class SeaStateCard extends HTMLElement {
       rain: true,
       cyclones: true,
       spots: true,
+      sharks: true,
       forecast: true,
       units: "auto",
       quality: "auto",
@@ -545,6 +553,7 @@ class SeaStateCard extends HTMLElement {
     this._icons = [];
     loadIcons().then(() => {
       this._iconsReady = true;
+      this._renderLegend();
       this._loop();
     });
     this._msg = $(".msg");
@@ -1164,7 +1173,9 @@ class SeaStateCard extends HTMLElement {
     this._legend.querySelector(".ticks").innerHTML = ticks.map((t) => `<span>${t}</span>`).join("");
     const row = this._legend.querySelector(".row");
     if (this._showSurf()) {
-      row.innerHTML = ["epic", "good", "fair", "poor", "flat"].map((k) => `<span><i style="background:${CONDITION_COLORS[k]}"></i>${CONDITION_LABELS[k]}</span>`).join("");
+      const shark = this._config.sharks !== false && iconUrl("shark", null);
+      row.innerHTML = ["epic", "good", "fair", "poor", "flat"].map((k) => `<span><i style="background:${CONDITION_COLORS[k]}"></i>${CONDITION_LABELS[k]}</span>`).join("")
+        + (shark ? `<span><img class="shk" src="${shark}" alt="">Shark area</span>` : "");
     } else {
       row.innerHTML = `<span><i style="background:#ffffff"></i>Clouds</span><span><i style="background:#8fb2d8"></i>Rain</span><span><i style="background:${CATEGORY_COLORS[3]}"></i>Cyclone</span>`;
     }
@@ -1482,6 +1493,17 @@ class SeaStateCard extends HTMLElement {
     });
   }
 
+  /** shark background for a spot: species, safety measures and the official live service */
+  _sharkHtml(sh) {
+    const icon = iconUrl("shark", null);
+    const svc = sh.service;
+    return `<div class="sharkbox">${icon ? `<img src="${icon}" alt="">` : ""}<div><div class="t">Shark area</div>`
+      + `<div>${esc(sh.species)}</div>`
+      + (sh.measures ? `<div class="muted">${esc(sh.measures)}</div>` : "")
+      + (svc ? `<div style="margin-top:4px">Live: <a href="${esc(svc.url)}" target="_blank" rel="noopener">${esc(svc.name)}</a><div class="muted">${esc(svc.offers)}</div></div>` : "")
+      + `<div class="muted" style="margin-top:4px">Background information, not a live warning. Check the local service and the lifeguards before you paddle out.</div></div></div>`;
+  }
+
   /** spots that share one place on the globe: pick one */
   _groupInfo(g) {
     const list = g.members
@@ -1616,6 +1638,7 @@ class SeaStateCard extends HTMLElement {
       const d = new Date(new Date(s.next_good).getTime() + (s.utc_offset || 0) * 1000);
       parts.push(`<div class="line"><span class="ic">⏭</span><span class="tx">Next good session ${d.toLocaleString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC" })} local</span></div>`);
     }
+    if (s.sharks && this._config.sharks !== false) parts.push(this._sharkHtml(s.sharks));
     parts.push(this._chartSvg(s));
     if (s.days && s.days.length) {
       const rows = s.days.map((d) => {
@@ -2279,6 +2302,10 @@ class SeaStateCard extends HTMLElement {
           badge: extra > 0 ? `+${extra}` : null,
         });
         if (extra > 0) clusters.push({ members: d.members, bx: pr.x + size * 0.22 + 9, by: pr.y - size * 0.5 + 7 });
+        if (s.sharks && this._config.sharks !== false && ICON_TEXT.shark) {
+          // small shark marker at the lower left of the surfer
+          this._icons.push({ id: `shark:${s.id}`, kind: "shark", ring: null, x: pr.x - size * 0.4, y: pr.y + size * 0.32, size: size * 0.55, alpha: alpha * (1 - 0.3 * night), sel: false });
+        }
         hits.push({ kind: "spot", v: s, x: pr.x, y: pr.y, r: Math.max(16, iconSize * 0.55) });
       } else {
         const r = surf ? clamp(2.4 * zf, 2.5, 6) : clamp(1.8 * zf, 2, 4.5);
@@ -2392,6 +2419,7 @@ const EDITOR_SCHEMA = [
       { name: "rain", selector: { boolean: {} } },
       { name: "cyclones", selector: { boolean: {} } },
       { name: "spots", selector: { boolean: {} } },
+      { name: "sharks", selector: { boolean: {} } },
       { name: "labels", selector: { boolean: {} } },
       { name: "regions", selector: { boolean: {} } },
       { name: "forecast", selector: { boolean: {} } },
@@ -2413,6 +2441,7 @@ const EDITOR_LABELS = {
   rain: "Rain and lightning",
   cyclones: "Tropical cyclones",
   spots: "Surf spots",
+  sharks: "Shark areas",
   labels: "Spot names",
   regions: "Region buttons",
   forecast: "Forecast button (48 h)",
@@ -2455,6 +2484,7 @@ class SeaStateCardEditor extends HTMLElement {
       rain: true,
       cyclones: true,
       spots: true,
+      sharks: true,
       labels: true,
       regions: true,
       forecast: true,
