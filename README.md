@@ -193,7 +193,7 @@ Shark bites are rare. This is background information, not a live warning: always
 
 ### Webcams
 
-See the weather and how busy the beach is before you go. With a free [Windy](https://www.windy.com) webcams key, the details of a spot show up to three webcams within 15 km, beach and coast cams first, each with its distance and the age of the image. A tap opens the cam on Windy with its live view and timelapse.
+See the weather and how busy the beach is before you go. With a free [Windy](https://www.windy.com) webcams key, the details of a spot show up to three webcams within 15 km, beach and coast cams first, each with its distance and the age of the image. At night the last daylight image is shown. A tap opens the cam on Windy with its live view and timelapse.
 
 1. Create a free account and key at [api.windy.com/keys](https://api.windy.com/keys) (product: Webcams API).
 2. Paste the key into **Settings → Devices & services → Sea State Forecast → Configure → Windy webcams API key**.

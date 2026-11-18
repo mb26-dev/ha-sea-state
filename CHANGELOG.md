@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.1.0b7 (beta)
 
 - Webcams near the surf spots (optional): with a free Windy webcams key, the details of a spot show up to three webcams within 15 km, beach cams first, with distance and image age; each one opens on Windy
+- At night the webcams show their last daylight image, so you still see the beach
 - New integration option "Windy webcams API key" (checked when saved) and card option `webcams`
 
 ## 0.1.0b6 (beta)
