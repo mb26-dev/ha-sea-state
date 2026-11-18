@@ -297,6 +297,14 @@ def daily_summary(spot: dict[str, Any], rows: list[dict[str, Any]], offset_s: in
     return out
 
 
+def _first(*values: Any) -> Any:
+    """First value that is a usable number (some models leave peak periods empty)."""
+    for v in values:
+        if v is not None and v == v and v > 0:
+            return v
+    return None
+
+
 def build_rows(marine: dict[str, Any], weather: dict[str, Any] | None) -> list[dict[str, Any]]:
     """Merge the hourly marine and weather series of one location into rows."""
     mh = (marine or {}).get("hourly") or {}
@@ -319,7 +327,8 @@ def build_rows(marine: dict[str, Any], weather: dict[str, Any] | None) -> list[d
             "ww_h": pick(mh, "wind_wave_height", i),
             "sw_h": pick(mh, "swell_wave_height", i),
             "sw_dir": pick(mh, "swell_wave_direction", i),
-            "sw_per": pick(mh, "swell_wave_peak_period", i),
+            "sw_per": _first(pick(mh, "swell_wave_peak_period", i), pick(mh, "swell_wave_period", i)),
+            "per": pick(mh, "wave_period", i),
             "sw2_h": pick(mh, "secondary_swell_wave_height", i),
             "sw2_dir": pick(mh, "secondary_swell_wave_direction", i),
             "sw2_per": pick(mh, "secondary_swell_wave_period", i),
