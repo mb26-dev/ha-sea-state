@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Webcams near the surf spots (optional): with a free Windy webcams key, the details of a spot show up to three webcams within 15 km, beach cams first, with distance and image age; each one opens on Windy
+- New integration option "Windy webcams API key" (checked when saved) and card option `webcams`
+
 ## 0.1.0b6 (beta)
 
 - Fixed: on dashboards with hass-swipe-navigation, dragging the globe with a finger switched to another view instead of turning the globe

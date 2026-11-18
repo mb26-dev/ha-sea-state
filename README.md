@@ -112,6 +112,7 @@ All settings are done in the UI and can be changed later under **Configure**:
 | Cyclone warning radius | 800 km | For the "Tropical cyclone nearby" sensor. |
 | Global waves and weather update | every 12 hours | 6, 12 or 24 hours. The grid forecast covers 48 hours. |
 | Custom spots | empty | Your own breaks, one per line: `name, lat, lon, swell direction[, offshore wind direction[, min, ideal, max surf height in m]]`, for example `My Reef, 7.81, 98.29, 250, 90, 0.5, 1.2, 2.5`. Directions are where the swell and the offshore wind come **from**, in degrees. |
+| Windy webcams API key | empty | Optional. Shows up to 3 webcams near a spot in its details. See [Webcams](#webcams). |
 
 **Open-Meteo usage:** the free Open-Meteo API allows 10,000 calls per day for non-commercial use, and every location in a request counts as one call. With the defaults Sea State Forecast uses about **4,600 calls per day** (global waves on a 6° grid, about 1,100 ocean points, and weather on a 9° grid, 760 points, every 12 hours; the 112 spots every 6 hours, waves and wind). Requests are split into chunks with pauses so the per minute limit is never reached. If you run other integrations that use Open-Meteo, set the global update to every 24 hours. The NASA Earth images (about 3 MB) are downloaded once; if [Orbitarium](https://github.com/mb26-dev/ha-orbitarium) or [Magmarium](https://github.com/mb26-dev/ha-magmarium) is installed, their images are used and nothing is downloaded.
 
@@ -140,6 +141,7 @@ rain: true             # rain and lightning
 cyclones: true
 spots: true
 sharks: true           # shark markers and details for spots in shark areas
+webcams: true          # webcams near a spot (needs a Windy key in the integration)
 labels: true           # names of firing spots
 regions: true          # region buttons
 forecast: true         # 48 hour forecast button
@@ -189,6 +191,15 @@ Some of the best breaks in the world are also home to sharks. Sea State Forecast
 
 Shark bites are rare. This is background information, not a live warning: always check the local service and the lifeguards before you paddle out. Corrections and links for more areas are welcome as issues.
 
+### Webcams
+
+See the weather and how busy the beach is before you go. With a free [Windy](https://www.windy.com) webcams key, the details of a spot show up to three webcams within 15 km, beach and coast cams first, each with its distance and the age of the image. A tap opens the cam on Windy with its live view and timelapse.
+
+1. Create a free account and key at [api.windy.com/keys](https://api.windy.com/keys) (product: Webcams API).
+2. Paste the key into **Settings → Devices & services → Sea State Forecast → Configure → Windy webcams API key**.
+
+The webcams are only fetched when you open a spot and are kept for a few minutes, so a key stays far below its limits. Leave the field empty to turn the webcams off; the card option `webcams: false` hides them on a single card. Not every spot has a webcam nearby.
+
 ## How the rating works
 
 | Step | What happens |
@@ -237,6 +248,7 @@ A star on GitHub, a bug report or a screenshot of your dashboard helps just as m
 - Earth imagery: NASA Earth Observatory, [Blue Marble Next Generation](https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/) by Reto Stöckli and [Black Marble 2016](https://science.nasa.gov/earth/earth-observatory/earth-at-night/maps)
 - Logo, surfer, shark, storm and cyclone markers and mode icons: original artwork by mb26-dev
 - Shark areas link to the official services listed above; their data stays with them
+- Webcams (optional, with your own key): webcams provided by [windy.com](https://www.windy.com) through the Windy Webcams API
 - Waves, crests, clouds, rain and cyclone spirals on the globe are drawn by the card itself
 
 See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for details.
