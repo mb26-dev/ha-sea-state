@@ -3,7 +3,7 @@
  * https://github.com/mb26-dev/ha-sea-state
  */
 
-import { DEG, ecef, viewFrame, sunDirection, loadEarth, renderEarth, upsampleGrid, waveColor, WAVE_STOPS } from "./sea-state-earth.js?v=0.1.0b4";
+import { DEG, ecef, viewFrame, sunDirection, loadEarth, renderEarth, upsampleGrid, waveColor, WAVE_STOPS } from "./sea-state-earth.js?v=0.1.0b5";
 import {
   CONDITION_COLORS,
   CONDITION_LABELS,
@@ -13,9 +13,9 @@ import {
   cloudSprite,
   drawLightning,
   drawCyclone,
-} from "./sea-state-art.js?v=0.1.0b4";
+} from "./sea-state-art.js?v=0.1.0b5";
 
-const VERSION = "0.1.0b4";
+const VERSION = "0.1.0b5";
 
 // animated SVG markers, shown as <img> above the globe so their own animations run
 const ICON_BASE = new URL("./icons/", import.meta.url);
@@ -437,6 +437,7 @@ class SeaStateCard extends HTMLElement {
       spots: true,
       sharks: true,
       forecast: true,
+      lighting: "day",
       units: "auto",
       quality: "auto",
       ...(config || {}),
@@ -1199,6 +1200,11 @@ class SeaStateCard extends HTMLElement {
     return this._view.zoom * Math.min(this._w, this._h) * 0.42;
   }
 
+  /** daylight everywhere (default) or the real day and night with city lights */
+  _allDay() {
+    return this._config.lighting !== "real";
+  }
+
   _frame() {
     return viewFrame(this._view.lat, this._view.lon);
   }
@@ -1787,7 +1793,19 @@ class SeaStateCard extends HTMLElement {
     const interacting = moving || !!this._drag || !!this._pinch;
     if (interacting) this._earthDirty = true;
     const now = Date.now();
-    if (now - this._lastSun > SUN_REFRESH_MS || this._sunFor !== Math.round(this._offsetH * 4)) {
+    if (this._allDay()) {
+      // daylight everywhere: the light follows the view, from the upper left
+      const G = this._frame();
+      const l = [0, 1, 2].map((k) => G.view[k] + 0.4 * G.north[k] - 0.3 * G.east[k]);
+      const n = Math.hypot(l[0], l[1], l[2]);
+      const sun = l.map((v) => v / n);
+      if (!this._sun || Math.abs(sun[0] - this._sun[0]) + Math.abs(sun[1] - this._sun[1]) + Math.abs(sun[2] - this._sun[2]) > 1e-6) {
+        this._sun = sun;
+        this._earthDirty = true;
+      }
+      this._fxSun = G.view;
+    } else if (now - this._lastSun > SUN_REFRESH_MS || this._sunFor !== Math.round(this._offsetH * 4) || this._fxSun) {
+      this._fxSun = null;
       this._sun = sunDirection(this._now());
       this._sunFor = Math.round(this._offsetH * 4);
       this._lastSun = now;
@@ -1826,7 +1844,7 @@ class SeaStateCard extends HTMLElement {
         ? { field: fine.data, mask: f.fineMask.data, nlat: fine.nlat, nlon: fine.nlon, lat0: f.lat0, lon0: f.lon0, step: fine.step, amount }
         : { field: f.h, mask: f.mask, nlat: f.nlat, nlon: f.nlon, lat0: f.lat0, lon0: f.lon0, step: f.step, amount })
       : null;
-    renderEarth(this._cEarth, this._earth, this._frame(), this._sun || sunDirection(this._now()), W, H, R, waves);
+    renderEarth(this._cEarth, this._earth, this._frame(), this._sun || sunDirection(this._now()), W, H, R, waves, this._allDay());
   }
 
   // ------------------------------------------------------------------ fx layers
@@ -1840,7 +1858,8 @@ class SeaStateCard extends HTMLElement {
     const W = this._w, H = this._h;
     const G = this._frame();
     const R = this._R();
-    const sun = this._sun || sunDirection(this._now());
+    // markers and clouds: no night dimming in daylight mode
+    const sun = this._fxSun || this._sun || sunDirection(this._now());
     const zoom = this._view.zoom;
     const t = this._t;
     const hits = [];
@@ -2289,7 +2308,8 @@ class SeaStateCard extends HTMLElement {
       if (big) {
         const kind = POSE_ICON[now.pose] || "riding";
         const size = iconSize * (sel ? 1.18 : 1);
-        const extra = d.members.length - 1;
+        // the group count only while its surfer is on screen, not peeking in at the edge
+        const extra = pr.x >= 0 && pr.x <= W && pr.y >= 0 && pr.y <= H ? d.members.length - 1 : 0;
         this._icons.push({
           id: `spot:${s.id}`,
           kind,
@@ -2407,6 +2427,7 @@ const EDITOR_SCHEMA = [
       { name: "zoom", selector: { number: { min: 0.8, max: 16, step: 0.1, mode: "box" } } },
       { name: "units", selector: { select: { mode: "dropdown", options: [{ value: "auto", label: "Like Home Assistant" }, { value: "metric", label: "Metric" }, { value: "imperial", label: "Imperial" }] } } },
       { name: "quality", selector: { select: { mode: "dropdown", options: [{ value: "auto", label: "Automatic" }, { value: "high", label: "High" }, { value: "low", label: "Low (old tablets)" }] } } },
+      { name: "lighting", selector: { select: { mode: "dropdown", options: [{ value: "day", label: "Daylight everywhere" }, { value: "real", label: "Real day and night" }] } } },
     ],
   },
   {
@@ -2435,6 +2456,7 @@ const EDITOR_LABELS = {
   zoom: "Zoom (empty = automatic)",
   units: "Units",
   quality: "Animation quality",
+  lighting: "Lighting",
   waves: "Wave height colours",
   crests: "Rolling wave crests",
   clouds: "Clouds",
@@ -2478,6 +2500,7 @@ class SeaStateCardEditor extends HTMLElement {
       center: "home",
       units: "auto",
       quality: "auto",
+      lighting: "day",
       waves: true,
       crests: true,
       clouds: true,

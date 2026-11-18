@@ -223,10 +223,11 @@ export function upsampleGrid(src, nlat, nlon, step, factor, min = 0, max = Infin
 /**
  * Render the globe into `canvas` (width x height pixels).
  * G: view frame, sunE: sun direction, R: globe radius in pixels.
+ * allDay: ignore the real sun, light the whole visible half (shading still comes from sunE).
  * waves (optional): { field: Float32Array (land filled), mask: Float32Array (1 sea, 0 land), nlat, nlon, lat0, lon0, step, amount }
  * Pixels outside the disk stay transparent.
  */
-export function renderEarth(canvas, earth, G, sunE, width, height, R, waves) {
+export function renderEarth(canvas, earth, G, sunE, width, height, R, waves, allDay = false) {
   if (canvas.width !== width || canvas.height !== height) {
     canvas.width = width;
     canvas.height = height;
@@ -271,8 +272,11 @@ export function renderEarth(canvas, earth, G, sunE, width, height, R, waves) {
       const n1 = x * E[1] + y * N[1] + z * V[1];
       const n2 = x * E[2] + y * N[2] + z * V[2];
       const dot = n0 * sunE[0] + n1 * sunE[1] + n2 * sunE[2];
-      const dayF = smooth(-0.12, 0.08, dot);
-      const light = 0.35 + 0.75 * Math.min(1, Math.max(0, dot * 1.3 + 0.12));
+      // allDay: the whole visible half is in daylight, shaded softly from the upper left
+      const dayF = allDay ? 1 : smooth(-0.12, 0.08, dot);
+      const light = allDay
+        ? 0.62 + 0.48 * Math.min(1, Math.max(0, dot))
+        : 0.35 + 0.75 * Math.min(1, Math.max(0, dot * 1.3 + 0.12));
       const k = dayF * light;
       const lat = Math.asin(n2 > 1 ? 1 : n2 < -1 ? -1 : n2);
       const lon = Math.atan2(n1, n0);
