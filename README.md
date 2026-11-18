@@ -49,6 +49,7 @@ No API key, no account.
 - **Tropical cyclones** (hurricanes, typhoons, cyclones) from GDACS as rotating spirals with their past and forecast track, coloured by category
 - **Gale areas at sea** (Beaufort 8 and more) with wind and pressure
 - **Surf spots** with a little surfer: sitting on a flat sea, paddling, riding, in the barrel when it is epic, a red flag when it is too big, spray when it is blown out
+- **Compact spot card:** one spot or a list of spots for the home dashboard, without the globe, everything selectable in the visual editor
 - **Webcams (optional):** up to three live webcams near a spot, beach cams first, with the last daylight image at night (free Windy key)
 - **Shark areas:** spots where sharks are part of the local ecosystem get a small shark marker, and their details name the species, the local safety measures and the official live service for the area
 - **Three modes:** Ocean & weather, Surf, or All, plus a **Firing** filter for the spots that work right now
@@ -154,6 +155,37 @@ rotate: false          # slow rotation when nobody touches the card
 ```
 
 Ocean basins for `center`: `north_atlantic`, `caribbean`, `east_pacific`, `north_pacific`, `west_pacific`, `andaman`, `bay_of_bengal`, `indian`, `south_pacific`, `southern_ocean`, `mediterranean`, `north_sea`.
+
+### Compact spot card
+
+For a quick look on your home dashboard there is a second card without the globe: `custom:sea-state-spot-card`. It shows one spot, or several spots as a list, in the same design. Add it from the card picker ("Sea State Spot") and pick what to show in the visual editor.
+
+```yaml
+type: custom:sea-state-spot-card
+spot: home                # home spot, or a spot id such as kata or pipeline
+days: 3                   # days in the outlook, 0 to hide
+navigation_path: /dashboard-surf/globe   # optional: open the globe on tap
+# everything is shown by default, switch off what you don't need:
+surf: true                # surf height and swell window
+swell: true
+wind: true
+water: true
+tide: true
+sea_state: true
+chart: true               # rating for the next 48 h with the tide
+next_good: true           # next good session when it's poor now
+cyclone: true             # tropical cyclone within your warning radius
+sharks: true
+webcams: true             # needs a Windy key in the integration
+```
+
+Several spots as a compact list with surfer, stars, surf height and wind:
+
+```yaml
+type: custom:sea-state-spot-card
+title: My breaks
+spots: [kata, uluwatu, pipeline, jeffreys_bay]
+```
 
 ### Surf spots and regions
 

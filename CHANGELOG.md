@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.0b8 (beta)
+
+- New compact card `custom:sea-state-spot-card` for the home dashboard: one spot (surfer, rating, surf, swell, wind, water, tide, sea state, 48 h chart, outlook, next good session, cyclone nearby, shark area, webcams) or several spots as a list, without the globe; every part can be switched on and off in the visual editor
+- Optional `navigation_path` opens your globe dashboard when the card is tapped
+
 ## 0.1.0b7 (beta)
 
 - Webcams near the surf spots (optional): with a free Windy webcams key, the details of a spot show up to three webcams within 15 km, beach cams first, with distance and image age; each one opens on Windy
