@@ -11,7 +11,8 @@
           "firing_rating": "Läuft ab Bewertung",
           "cyclone_radius_km": "Zyklon-Warnradius",
           "grid_hours": "Aktualisierung globale Wellen und Wetter",
-          "custom_spots": "Eigene Spots"
+          "custom_spots": "Eigene Spots",
+          "windy_api_key": "Windy-Webcams-API-Schlüssel (optional)"
         },
         "data_description": {
           "sources": "Globale Wellen und Wetter zeichnen Meer und Stürme auf den Globus. Surf-Spots bewerten 112 bekannte Spots alle 6 Stunden. Tropische Wirbelstürme kommen von GDACS.",
@@ -20,13 +21,16 @@
           "firing_rating": "Bewertung (0 bis 5 Sterne), ab der ein Spot als 'läuft' zählt.",
           "cyclone_radius_km": "Der Sensor 'Tropischer Wirbelsturm in der Nähe' schaltet ein, wenn ein Zyklon oder seine Zugbahn so nah an dein Zuhause kommt.",
           "grid_hours": "Das globale Raster braucht pro Aktualisierung rund 2.300 Open-Meteo-Abrufe (frei sind 10.000 pro Tag). Die Vorhersage reicht 48 Stunden, alle 12 Stunden genügt.",
-          "custom_spots": "Ein Spot pro Zeile: Name, Breitengrad, Längengrad, Swell-Richtung (aus, Grad), optional ablandige Windrichtung (aus) und optional min, ideal, max Surfhöhe in m. Beispiel: Mein Riff, 7.81, 98.29, 250, 90, 0.5, 1.2, 2.5"
+          "custom_spots": "Ein Spot pro Zeile: Name, Breitengrad, Längengrad, Swell-Richtung (aus, Grad), optional ablandige Windrichtung (aus) und optional min, ideal, max Surfhöhe in m. Beispiel: Mein Riff, 7.81, 98.29, 250, 90, 0.5, 1.2, 2.5",
+          "windy_api_key": "Zeigt in den Spot-Details bis zu 3 Live-Webcams in der Nähe, damit du Wetter und Andrang am Strand siehst. Kostenloser Schlüssel unter api.windy.com/keys. Leer lassen schaltet die Webcams ab."
         }
       }
     },
     "error": {
       "no_sources": "Wähle mindestens eine Datenquelle.",
-      "bad_custom_spots": "Eine Zeile bei den eigenen Spots ist ungültig. Format: Name, Breite, Länge, Swell-Richtung."
+      "bad_custom_spots": "Eine Zeile bei den eigenen Spots ist ungültig. Format: Name, Breite, Länge, Swell-Richtung.",
+      "bad_windy_key": "Der Windy-Schlüssel wurde nicht akzeptiert. Prüfe ihn unter api.windy.com/keys.",
+      "windy_unreachable": "Windy war zur Prüfung des Schlüssels nicht erreichbar. Versuche es später erneut."
     },
     "abort": {
       "already_configured": "Sea State Forecast ist bereits eingerichtet.",
@@ -44,7 +48,8 @@
           "firing_rating": "Läuft ab Bewertung",
           "cyclone_radius_km": "Zyklon-Warnradius",
           "grid_hours": "Aktualisierung globale Wellen und Wetter",
-          "custom_spots": "Eigene Spots"
+          "custom_spots": "Eigene Spots",
+          "windy_api_key": "Windy-Webcams-API-Schlüssel (optional)"
         },
         "data_description": {
           "sources": "Globale Wellen und Wetter zeichnen Meer und Stürme auf den Globus. Surf-Spots bewerten 112 bekannte Spots alle 6 Stunden. Tropische Wirbelstürme kommen von GDACS.",
@@ -53,13 +58,16 @@
           "firing_rating": "Bewertung (0 bis 5 Sterne), ab der ein Spot als 'läuft' zählt.",
           "cyclone_radius_km": "Der Sensor 'Tropischer Wirbelsturm in der Nähe' schaltet ein, wenn ein Zyklon oder seine Zugbahn so nah an dein Zuhause kommt.",
           "grid_hours": "Das globale Raster braucht pro Aktualisierung rund 2.300 Open-Meteo-Abrufe (frei sind 10.000 pro Tag). Die Vorhersage reicht 48 Stunden, alle 12 Stunden genügt.",
-          "custom_spots": "Ein Spot pro Zeile: Name, Breitengrad, Längengrad, Swell-Richtung (aus, Grad), optional ablandige Windrichtung (aus) und optional min, ideal, max Surfhöhe in m. Beispiel: Mein Riff, 7.81, 98.29, 250, 90, 0.5, 1.2, 2.5"
+          "custom_spots": "Ein Spot pro Zeile: Name, Breitengrad, Längengrad, Swell-Richtung (aus, Grad), optional ablandige Windrichtung (aus) und optional min, ideal, max Surfhöhe in m. Beispiel: Mein Riff, 7.81, 98.29, 250, 90, 0.5, 1.2, 2.5",
+          "windy_api_key": "Zeigt in den Spot-Details bis zu 3 Live-Webcams in der Nähe, damit du Wetter und Andrang am Strand siehst. Kostenloser Schlüssel unter api.windy.com/keys. Leer lassen schaltet die Webcams ab."
         }
       }
     },
     "error": {
       "no_sources": "Wähle mindestens eine Datenquelle.",
-      "bad_custom_spots": "Eine Zeile bei den eigenen Spots ist ungültig. Format: Name, Breite, Länge, Swell-Richtung."
+      "bad_custom_spots": "Eine Zeile bei den eigenen Spots ist ungültig. Format: Name, Breite, Länge, Swell-Richtung.",
+      "bad_windy_key": "Der Windy-Schlüssel wurde nicht akzeptiert. Prüfe ihn unter api.windy.com/keys.",
+      "windy_unreachable": "Windy war zur Prüfung des Schlüssels nicht erreichbar. Versuche es später erneut."
     }
   },
   "entity": {
