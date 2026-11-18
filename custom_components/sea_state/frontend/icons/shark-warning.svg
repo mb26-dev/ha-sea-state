@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Animated Shark Warning Marker">
+  <defs>
+    <linearGradient id="waveBodySW" x1="15%" y1="100%" x2="85%" y2="0%">
+      <stop offset="0%" stop-color="#082f49" />
+      <stop offset="42%" stop-color="#0369a1" />
+      <stop offset="80%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#38bdf8" />
+    </linearGradient>
+
+    <linearGradient id="sharkGradSW" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#475569" />
+      <stop offset="45%" stop-color="#1e293b" />
+      <stop offset="85%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+
+    <linearGradient id="sharkBellySW" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#cbd5e1" />
+      <stop offset="60%" stop-color="#94a3b8" />
+      <stop offset="100%" stop-color="#475569" />
+    </linearGradient>
+
+    <linearGradient id="dangerFlagSW" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fca5a5" />
+      <stop offset="45%" stop-color="#ef4444" />
+      <stop offset="100%" stop-color="#991b1b" />
+    </linearGradient>
+
+    <linearGradient id="ringGradSW" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fca5a5" />
+      <stop offset="45%" stop-color="#ef4444" />
+      <stop offset="100%" stop-color="#991b1b" />
+    </linearGradient>
+
+    <filter id="shadowSW" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#020617" flood-opacity="0.75" />
+    </filter>
+
+    <clipPath id="clipSW">
+      <circle cx="64" cy="64" r="54" />
+    </clipPath>
+  </defs>
+
+  <!-- Fully Transparent Interior Clipped to Red Warning Ring -->
+  <g clip-path="url(#clipSW)" filter="url(#shadowSW)">
+    <!-- Ominous Ocean Waves -->
+    <g>
+      <animateTransform attributeName="transform" type="translate" values="-2 2; 2 -2; -2 2" keyTimes="0; 0.5; 1" calcMode="spline" keySplines="0.42 0 0.58 1; 0.42 0 0.58 1" dur="2.1s" repeatCount="indefinite" />
+
+      <!-- Back Waves -->
+      <path d="M 12 92 C 34 85, 48 76, 62 62 C 76 48, 92 60, 114 91 L 114 94 L 12 94 Z" fill="#0c4a6e" opacity="0.6" />
+
+      <!-- Choppy Foreground Waves -->
+      <path d="M 12 92 C 36 86, 51 64, 67 48 C 80 32, 105 32, 111 50 C 100 42, 88 47, 85 59 C 82 71, 94 80, 115 89 C 82 95, 42 95, 12 92 Z" fill="url(#waveBodySW)" />
+      <path d="M 32 90 C 50 78, 63 58, 74 36" fill="none" stroke="#38bdf8" stroke-width="1.3" stroke-opacity="0.7" stroke-linecap="round" />
+      <path d="M 48 91 C 62 79, 72 62, 81 43" fill="none" stroke="#7dd3fc" stroke-width="1.1" stroke-opacity="0.55" stroke-linecap="round" />
+    </g>
+
+    <!-- Menacing Breaching Great White Shark -->
+    <g>
+      <animateTransform attributeName="transform" type="translate" values="-2 3; 2.5 -3.5; -2 3" keyTimes="0; 0.5; 1" calcMode="spline" keySplines="0.42 0 0.58 1; 0.42 0 0.58 1" dur="1.8s" repeatCount="indefinite" />
+      <g>
+        <animateTransform attributeName="transform" type="rotate" values="-4 68 64; 4 68 64; -4 68 64" keyTimes="0; 0.5; 1" calcMode="spline" keySplines="0.42 0 0.58 1; 0.42 0 0.58 1" dur="1.8s" repeatCount="indefinite" />
+
+        <!-- Thrashing Wake Spray Behind Shark -->
+        <path d="M 33 80 Q 42 77 49 74" fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" opacity="0.9" />
+        <path d="M 37 83 Q 44 80 50 78" fill="none" stroke="#67e8f9" stroke-width="1.4" stroke-linecap="round" opacity="0.75" />
+
+        <!-- Shark Anatomy -->
+        <!-- Main Shark Body/Back -->
+        <path d="M 32 82 C 43 78, 48 70, 52 58 C 55 42, 60 28, 65 19 C 68 18, 70 24, 71 31 C 76 42, 88 47, 98 48 C 103 48, 105 52, 101 54 C 88 58, 80 66, 73 72 C 65 79, 52 83, 40 84 Z" fill="url(#sharkGradSW)" stroke="#020617" stroke-width="0.75" stroke-linejoin="round" />
+
+        <!-- High-Contrast Light Belly -->
+        <path d="M 32 82 C 34 81, 40 81, 44 82 C 48 83, 53 82, 58 79 C 66 74, 71 72, 73 72 C 65 79, 52 83, 40 84 Z" fill="url(#sharkBellySW)" stroke="#020617" stroke-width="0.5" />
+
+        <!-- Dorsal Fin Backwards-Sweep Outline -->
+        <path d="M 52 58 C 55 42, 60 28, 65 19 C 68 18, 70 24, 71 31" fill="none" stroke="#e2e8f0" stroke-width="1.2" stroke-linecap="round" stroke-opacity="0.85" />
+
+        <!-- Snout, Gills & Tiny Menacing Eye -->
+        <path d="M 94 48 C 96 48.2, 97 49, 95 50" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round" />
+        <circle cx="91" cy="46" r="0.9" fill="#f43f5e" stroke="#020617" stroke-width="0.3" />
+        <line x1="77" y1="52" x2="75" y2="58" stroke="#cbd5e1" stroke-width="0.8" stroke-opacity="0.7" />
+        <line x1="79" y1="53" x2="77.5" y2="58.5" stroke="#cbd5e1" stroke-width="0.8" stroke-opacity="0.7" />
+        <line x1="81" y1="54" x2="79.5" y2="59.5" stroke="#cbd5e1" stroke-width="0.8" stroke-opacity="0.7" />
+
+        <!-- Razor-sharp jaws / white highlight -->
+        <path d="M 85 55 L 89 57 L 91 55 L 93 57 L 95 54 L 91 53 Z" fill="#ffffff" stroke="#020617" stroke-width="0.5" />
+      </g>
+    </g>
+
+    <!-- Animated Spray / Splash Droplets at Wave Impact -->
+    <g fill="#ffffff">
+      <circle cx="94" cy="42" r="1.8">
+        <animate attributeName="cy" values="44; 32; 44" dur="1.3s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.2; 1; 0.2" dur="1.3s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="102" cy="44" r="1.4">
+        <animate attributeName="cy" values="47; 37; 47" dur="1.3s" begin="0.4s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.2; 1; 0.2" dur="1.3s" begin="0.4s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="86" cy="40" r="1.3">
+        <animate attributeName="cy" values="43; 33; 43" dur="1.3s" begin="0.8s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.2; 1; 0.2" dur="1.3s" begin="0.8s" repeatCount="indefinite" />
+      </circle>
+    </g>
+
+    <!-- Danger Alert Icon Overlay (Warning Sign ⚠️ with Exclamation badge on top-right) -->
+    <g transform="translate(14, 18)" filter="url(#shadowSW)">
+      <polygon points="12,4 21,19 3,19" fill="url(#dangerFlagSW)" stroke="#7f1d1d" stroke-width="1.2">
+        <animate attributeName="opacity" values="0.7; 1; 0.7" dur="1.3s" repeatCount="indefinite" />
+      </polygon>
+      <!-- Exclamation mark "!" -->
+      <line x1="12" y1="9" x2="12" y2="14" stroke="#ffffff" stroke-width="1.9" stroke-linecap="round" />
+      <circle cx="12" cy="16.5" r="1.2" fill="#ffffff" />
+    </g>
+  </g>
+
+  <!-- Crisp Red Warning Outer Ring -->
+  <circle cx="64" cy="64" r="56" fill="none" stroke="url(#ringGradSW)" stroke-width="4.5" filter="url(#shadowSW)" />
+</svg>
