@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.0b11 (beta)
+
+- **Safe rendering:** Card: links and images from feeds (webcams, GDACS reports, shark services) are only used when they are plain http(s) addresses.
+
 ## 0.1.0b10 (beta)
 
 - "All" mode shows the surf spots clearly on the whole globe: bigger dots, surfer figures for the best spots from a lower zoom, and names of firing spots without zooming in

@@ -16,7 +16,7 @@ import {
 } from "./sea-state-art.js?v=0.1.0b9";
 import "./sea-state-lightning.js?v=0.1.0b9";
 
-const VERSION = "0.1.0b10";
+const VERSION = "0.1.0b11";
 
 // animated SVG markers, shown as <img> above the globe so their own animations run
 const ICON_BASE = new URL("./icons/", import.meta.url);
@@ -170,6 +170,12 @@ function esc(value) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+// links and images from feeds (webcams, GDACS, shark services) are only used when they are plain web addresses
+function webUrl(value) {
+  const v = String(value ?? "").trim();
+  return /^https?:\/\//i.test(v) ? v : "";
 }
 
 function clamp(v, a, b) {
@@ -1546,7 +1552,7 @@ class SeaStateCard extends HTMLElement {
     return `<div class="sharkbox">${icon ? `<img src="${icon}" alt="">` : ""}<div><div class="t">Shark area</div>`
       + `<div>${esc(sh.species)}</div>`
       + (sh.measures ? `<div class="muted">${esc(sh.measures)}</div>` : "")
-      + (svc ? `<div style="margin-top:4px">Live: <a href="${esc(svc.url)}" target="_blank" rel="noopener">${esc(svc.name)}</a><div class="muted">${esc(svc.offers)}</div></div>` : "")
+      + (svc ? `<div style="margin-top:4px">Live: <a href="${esc(webUrl(svc.url))}" target="_blank" rel="noopener">${esc(svc.name)}</a><div class="muted">${esc(svc.offers)}</div></div>` : "")
       + `<div class="muted" style="margin-top:4px">Background information, not a live warning. Check the local service and the lifeguards before you paddle out.</div></div></div>`;
   }
 
@@ -1727,7 +1733,7 @@ class SeaStateCard extends HTMLElement {
       const age = useDay ? "last daylight" : c.updated ? ageText(Date.parse(c.updated)) : "";
       const dist = c.distance_km == null ? "" : c.distance_km < 1 ? `< ${this._dist(1)}` : this._dist(c.distance_km);
       const meta = [dist, age].filter(Boolean).join(" · ");
-      return `<a class="cam" href="${esc(c.link)}" target="_blank" rel="noopener" title="${esc(c.title)}"><img src="${esc(useDay ? c.daylight : c.image)}" alt="${esc(c.title)}" loading="lazy"><div class="cn">${esc(c.title)}<div class="muted">${esc(meta)}</div></div></a>`;
+      return `<a class="cam" href="${esc(webUrl(c.link))}" target="_blank" rel="noopener noreferrer" title="${esc(c.title)}"><img src="${esc(webUrl(useDay ? c.daylight : c.image))}" alt="${esc(c.title)}" loading="lazy"><div class="cn">${esc(c.title)}<div class="muted">${esc(meta)}</div></div></a>`;
     });
     return `<div class="ct">Webcams nearby</div><div class="cl">${cards.join("")}</div>${CAM_COURTESY}`;
   }
@@ -1788,7 +1794,7 @@ class SeaStateCard extends HTMLElement {
     }
     if (c.country) parts.push(`<div class="line"><span class="ic">🗺</span><span class="tx">${esc(c.country)}</span></div>`);
     parts.push(`<div class="muted" style="margin-top:6px">Source ${esc(c.source || "GDACS")} via GDACS${c.updated ? `, updated ${esc(rel(new Date(c.updated).getTime()))}` : ""}. Follow your national weather service for warnings.</div>`);
-    parts.push(`<div class="links"><a href="${esc(c.report_url)}" target="_blank" rel="noopener">GDACS report</a></div>`);
+    parts.push(`<div class="links"><a href="${esc(webUrl(c.report_url))}" target="_blank" rel="noopener">GDACS report</a></div>`);
     this._infoShell(`${c.kind || "Cyclone"} ${c.name}`, c.title || "", parts.join(""));
   }
 
@@ -2904,7 +2910,7 @@ class SeaStateSpotCard extends HTMLElement {
     if (this._show("sharks") && s.sharks) {
       const sh = s.sharks;
       const icon = iconUrl("shark", null);
-      parts.push(`<div class="note shark">${icon ? `<img src="${icon}" alt="">` : "🦈"}<span>Shark area · ${esc(sh.species)}${sh.service ? ` · <a href="${esc(sh.service.url)}" target="_blank" rel="noopener">${esc(sh.service.name)}</a>` : ""}</span></div>`);
+      parts.push(`<div class="note shark">${icon ? `<img src="${icon}" alt="">` : "🦈"}<span>Shark area · ${esc(sh.species)}${sh.service ? ` · <a href="${esc(webUrl(sh.service.url))}" target="_blank" rel="noopener">${esc(sh.service.name)}</a>` : ""}</span></div>`);
     }
     if (this._show("webcams") && this._camsOn()) parts.push(`<div class="cams" data-spot="${esc(s.id)}">${this._camsHtml(s.id)}</div>`);
     return parts.join("");
